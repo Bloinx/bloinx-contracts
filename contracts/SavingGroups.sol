@@ -40,14 +40,17 @@ contract SavingGroups is Ownable{
     Stages public stage;
 
     //Time constants in seconds
-    uint256 payTime = 1 * 150; //86400;
-    uint256 withdrawTime = 1 * 180; // (86400 * 2);
+    // Weekly by Default
+    uint256 internal payTime = 86400 * 7;
+    uint256 internal withdrawTime = 86400 * 7;
 
     constructor(
         uint256 _cashIn,
         uint256 _saveAmount,
         uint256 _groupSize,
-        address payable _admin
+        address payable _admin,
+        uint256 _payTime,
+        uint256 _withdrawTime
     ) public {
         admin = _admin;
         cashIn = _cashIn * 1e17;
@@ -56,6 +59,10 @@ contract SavingGroups is Ownable{
         cashOutUsers = 0;
         stage = Stages.Setup;
         addressOrderList = new address[](_groupSize);
+        require(_payTime > 0, "El tiempo para pagar no puede ser menor a un dia");
+        require(_withdrawTime > 0, "El tiempo para retirar los fondos no puede ser menor a un dia");
+        payTime = 86400 * _payTime;
+        withdrawTime = 86400 * _withdrawTime;
     }
 
     modifier atStage(Stages _stage) {
