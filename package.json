@@ -1,0 +1,23 @@
+{
+  "name": "bloinxcontracts",
+  "version": "1.0.0",
+  "description": "smart contracts for bloinx",
+  "main": "truffle-config.js",
+  "directories": {
+    "test": "test"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "bloinx",
+    "savingGroups",
+    "solidity"
+  ],
+  "author": "ArturVargas",
+  "license": "ISC",
+  "dependencies": {
+    "@truffle/hdwallet-provider": "^1.4.1",
+    "dotenv": "^10.0.0"
+  }
+}
