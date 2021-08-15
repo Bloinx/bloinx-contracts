@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.7.2;
+pragma solidity ^0.7.4;
 pragma experimental ABIEncoderV2;
 
 import './Ownable.sol';
@@ -31,18 +31,19 @@ contract SavingGroups is Ownable{
     //Counters and flags
     uint256 usersCounter = 0;
     uint256 public turn = 1; //Current cycle/round in the saving circle
-    uint256 startTime;
+    uint256 public startTime;
     uint256 public totalSaveAmount = 0; //Collective saving on the round
     uint256 public totalCashIn = 0;
     uint256 public cashOutUsers;
     uint256 cashOut=0;
-    address[] public addressOrderList; // ,address(0), address(0)
+    address[] public addressOrderList;
+    uint256[] public latePaymentsList;
     Stages public stage;
 
     //Time constants in seconds
     // Weekly by Default
-    uint256 internal payTime = 86400 * 7;
-    uint256 internal withdrawTime = 86400 * 7;
+    uint256 public payTime = 86400 * 7;
+    uint256 public withdrawTime = 86400 * 7;
 
     constructor(
         uint256 _cashIn,
@@ -59,6 +60,7 @@ contract SavingGroups is Ownable{
         cashOutUsers = 0;
         stage = Stages.Setup;
         addressOrderList = new address[](_groupSize);
+        latePaymentsList = new uint256[](_groupSize);
         require(_payTime > 0, "El tiempo para pagar no puede ser menor a un dia");
         require(_withdrawTime > 0, "El tiempo para retirar los fondos no puede ser menor a un dia");
         payTime = 86400 * _payTime;
@@ -131,9 +133,12 @@ contract SavingGroups is Ownable{
             users[msg.sender].saveAmountFlag == false,
             "Ya ahorraste este turno"
         ); //you have already saved this round
-        require(block.timestamp <= startTime + turn*payTime + (turn-1)*withdrawTime , "Pago tardio");
-        totalSaveAmount = totalSaveAmount + msg.value;
-        users[msg.sender].saveAmountFlag = true;
+         if(block.timestamp > startTime + turn*payTime + (turn-1)*withdrawTime) {
+            payLateTurn();
+        } else {
+            totalSaveAmount = totalSaveAmount + msg.value;
+            users[msg.sender].saveAmountFlag = true;
+        }
     }
 
     function payLateTurn()
@@ -150,6 +155,7 @@ contract SavingGroups is Ownable{
         ); //you have already saved this round
         totalCashIn = totalCashIn + msg.value;
         users[msg.sender].latePayments--;
+        updateLatePayments();
         if (users[msg.sender].latePayments == 0) { //Issue: si alguien se pone al corriente pero hay alguien mas atrazado no se prende su bandera
             cashOutUsers++;
         }
@@ -203,6 +209,7 @@ contract SavingGroups is Ownable{
                   cashOutUsers--;
               }
               users[useraddress].latePayments++;
+              updateLatePayments();
           }
        }
     }
@@ -263,6 +270,7 @@ contract SavingGroups is Ownable{
                     totalCashIn=totalCashIn-cashOut;
                 }
                 users[useraddress].latePayments = 1;
+                updateLatePayments();
             }
             users[useraddress].saveAmountFlag = false;
         }
@@ -280,6 +288,15 @@ contract SavingGroups is Ownable{
         require(msg.value == cashIn, 'Fondos Insuficientes');   //insufucuent funds
         totalCashIn = totalCashIn + msg.value;
         users[msg.sender].latePayments--;
+        updateLatePayments();
         cashOutUsers++;
+    }
+
+    function updateLatePayments() private{
+        for (uint8 i = 0; i<groupSize; i++){
+            address updateAddress=addressOrderList[i];
+            uint256 latePayment_=users[updateAddress].latePayments;
+            latePaymentsList[i]=latePayment_;
+        }
     }
 }
