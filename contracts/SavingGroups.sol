@@ -178,14 +178,18 @@ contract SavingGroups is Ownable{
             totalSaveAmount == (groupSize-1) * saveAmount,
             "Espera a que tengamos el monto de tu ahorro"
         ); //Se debe estar en fase de pago
-        if(users[msg.sender].latePayments>0){
-            uint256 _owed=users[msg.sender].latePayments*saveAmount;
+        transferAndAdvanceTurn();
+    }
+    
+    function transferAndAdvanceTurn() private{
+        address addressUserInTurn = addressOrderList[turn - 1];
+        if(users[addressUserInTurn].latePayments>0){
+            uint256 _owed=users[addressUserInTurn].latePayments*saveAmount;
             totalCashIn=totalCashIn+_owed;
             totalSaveAmount=totalSaveAmount-_owed;
-            users[msg.sender].latePayments=0;
+            users[addressUserInTurn].latePayments=0;
             cashOutUsers++;
         } 
-        address addressUserInTurn = addressOrderList[turn - 1];
         users[addressUserInTurn].userAddr.transfer(totalSaveAmount);
         totalSaveAmount = 0;
         updateLatePayments();
@@ -234,23 +238,7 @@ contract SavingGroups is Ownable{
         {
           findLateUser();
         }
-        if(users[msg.sender].latePayments>0){
-            uint256 _owed=users[msg.sender].latePayments*saveAmount;
-            totalCashIn=totalCashIn+_owed;
-            totalSaveAmount=totalSaveAmount-_owed;
-            users[msg.sender].latePayments=0;
-            cashOutUsers++;
-        } 
-        address addressUserInTurn = addressOrderList[turn - 1];
-        users[addressUserInTurn].userAddr.transfer(totalSaveAmount);
-        totalSaveAmount = 0;
-        updateLatePayments();
-        if (turn >= groupSize) {
-            stage = Stages.Finished;
-        } else {
-            newTurn();
-        }
-        turn++;
+        transferAndAdvanceTurn();
     }
 
     function withdrawCashIn()
@@ -282,7 +270,7 @@ contract SavingGroups is Ownable{
                 if (users[useraddress].latePayments == 0) {
                     users[useraddress].userAddr.transfer(cashOut);
                     totalCashIn=totalCashIn-cashOut;
-                    cashOutUsers=0; // Added
+                    cashOutUsers--; // Added
                 }
                 users[useraddress].latePayments = 1;
                 
