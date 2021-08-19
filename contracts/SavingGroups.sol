@@ -63,8 +63,8 @@ contract SavingGroups is Ownable{
         latePaymentsList = new uint256[](_groupSize);
         require(_payTime > 0, "El tiempo para pagar no puede ser menor a un dia");
         require(_withdrawTime > 0, "El tiempo para retirar los fondos no puede ser menor a un dia");
-        payTime = 86400 * _payTime;
-        withdrawTime = 86400 * _withdrawTime;
+        payTime = _payTime;//86400 * _payTime;
+        withdrawTime = _withdrawTime;//86400 * _withdrawTime;
     }
 
     modifier atStage(Stages _stage) {
@@ -178,9 +178,17 @@ contract SavingGroups is Ownable{
             totalSaveAmount == (groupSize-1) * saveAmount,
             "Espera a que tengamos el monto de tu ahorro"
         ); //Se debe estar en fase de pago
+        if(users[msg.sender].latePayments>0){
+            uint256 _owed=users[msg.sender].latePayments*saveAmount;
+            totalCashIn=totalCashIn+_owed;
+            totalSaveAmount=totalSaveAmount-_owed;
+            users[msg.sender].latePayments=0;
+            cashOutUsers++;
+        } 
         address addressUserInTurn = addressOrderList[turn - 1];
         users[addressUserInTurn].userAddr.transfer(totalSaveAmount);
         totalSaveAmount = 0;
+        updateLatePayments();
         if (turn >= groupSize) {
             stage = Stages.Finished;
         } else {
@@ -209,7 +217,6 @@ contract SavingGroups is Ownable{
                   cashOutUsers--;
               }
               users[useraddress].latePayments++;
-              updateLatePayments();
           }
        }
     }
@@ -227,10 +234,17 @@ contract SavingGroups is Ownable{
         {
           findLateUser();
         }
-
+        if(users[msg.sender].latePayments>0){
+            uint256 _owed=users[msg.sender].latePayments*saveAmount;
+            totalCashIn=totalCashIn+_owed;
+            totalSaveAmount=totalSaveAmount-_owed;
+            users[msg.sender].latePayments=0;
+            cashOutUsers++;
+        } 
         address addressUserInTurn = addressOrderList[turn - 1];
         users[addressUserInTurn].userAddr.transfer(totalSaveAmount);
         totalSaveAmount = 0;
+        updateLatePayments();
         if (turn >= groupSize) {
             stage = Stages.Finished;
         } else {
@@ -268,12 +282,14 @@ contract SavingGroups is Ownable{
                 if (users[useraddress].latePayments == 0) {
                     users[useraddress].userAddr.transfer(cashOut);
                     totalCashIn=totalCashIn-cashOut;
+                    cashOutUsers=0; // Added
                 }
                 users[useraddress].latePayments = 1;
-                updateLatePayments();
+                
             }
             users[useraddress].saveAmountFlag = false;
         }
+        updateLatePayments();
         turn = 1;
         stage = Stages.Setup;
     }
