@@ -2,7 +2,7 @@
 pragma solidity ^0.7.4;
 pragma experimental ABIEncoderV2;
 
-import './Ownable.sol';
+import "./Ownable.sol";
 
 contract SavingGroups is Ownable{
     enum Stages {
@@ -53,6 +53,8 @@ contract SavingGroups is Ownable{
         uint256 _payTime,
         uint256 _withdrawTime
     ) public {
+        require(_admin != address(0), "La direccion del administrador no puede ser cero");
+        require(_groupSize > 1 && _groupSize <= 10, "El tamanio del grupo debe ser mayor a uno y menor o igual a 10");
         admin = _admin;
         cashIn = _cashIn * 1e17;
         saveAmount = _saveAmount * 1e17;
@@ -72,14 +74,14 @@ contract SavingGroups is Ownable{
         _;
     }
 
-    function registerUser(uint256 _usrTurn)
-        public
+    function registerUser(uint256 _userTurn)
+        external
         payable
         isPayAmountCorrect(msg.value, cashIn)
         atStage(Stages.Setup)
     {
         require(usersCounter < groupSize, "El grupo esta completo"); //the saving circle is full
-        require(addressOrderList[_usrTurn-1]==address(0), "Este lugar ya esta ocupado" );
+        require(addressOrderList[_userTurn-1]==address(0), "Este lugar ya esta ocupado" );
         usersCounter++;
         totalCashIn = totalCashIn + msg.value;
         cashOutUsers++;
@@ -89,29 +91,29 @@ contract SavingGroups is Ownable{
             true,
             0
         );
-        addressOrderList[_usrTurn-1]=msg.sender; //store user
+        addressOrderList[_userTurn-1]=msg.sender; //store user
     }
 
-    function removeUser(uint256 _usrTurn)
-        public
+    function removeUser(uint256 _userTurn)
+        external
         payable
         onlyAdmin(admin)
         atStage(Stages.Setup)
     {
-      require(addressOrderList[_usrTurn-1]!=address(0), "Este turno esta vacio");
-      address removeAddress=addressOrderList[_usrTurn-1];
+      require(addressOrderList[_userTurn-1]!=address(0), "Este turno esta vacio");
+      address removeAddress=addressOrderList[_userTurn-1];
       if(users[removeAddress].latePayments == 0){
           totalCashIn = totalCashIn - cashIn;
           users[removeAddress].userAddr.transfer(cashIn);
       }
-      addressOrderList[_usrTurn-1]=address(0);
+      addressOrderList[_userTurn-1]=address(0);
       usersCounter--;
       cashOutUsers--;
       users[removeAddress].currentRoundFlag = false;
     }
 
     function startRound()
-        public
+        external
         onlyAdmin(admin)
         atStage(Stages.Setup)
     {
@@ -121,7 +123,7 @@ contract SavingGroups is Ownable{
     }
 
     function payTurn()
-        public
+        external
         payable
         isRegisteredUser(users[msg.sender].currentRoundFlag)
         isPayAmountCorrect(msg.value, cashIn)
@@ -130,7 +132,7 @@ contract SavingGroups is Ownable{
     {
         //users make the payment for the cycle
         require(
-            users[msg.sender].saveAmountFlag == false,
+            !users[msg.sender].saveAmountFlag,
             "Ya ahorraste este turno"
         ); //you have already saved this round
          if(block.timestamp > startTime + turn*payTime + (turn-1)*withdrawTime) {
@@ -162,7 +164,7 @@ contract SavingGroups is Ownable{
     }
 
     function withdrawTurn()
-        public
+        external
         payable
         isRegisteredUser(users[msg.sender].currentRoundFlag)
         atStage(Stages.Save)
@@ -200,7 +202,7 @@ contract SavingGroups is Ownable{
     function findLateUser() private{
       for (uint8 i = 0; i < groupSize; i++) {
           address useraddress = addressOrderList[i];
-          if (users[useraddress].saveAmountFlag == false &&
+          if (!users[useraddress].saveAmountFlag &&
           addressOrderList[turn - 1] != users[useraddress].userAddr
           ) {
               totalCashIn = totalCashIn - saveAmount;
@@ -215,7 +217,7 @@ contract SavingGroups is Ownable{
     }
 
     function advanceTurn()
-        public
+        external
         payable
         onlyAdmin(admin)
         atStage(Stages.Save)
@@ -240,7 +242,7 @@ contract SavingGroups is Ownable{
     }
 
     function withdrawCashIn()
-        public
+        external
         payable
         atStage(Stages.Finished)
         onlyAdmin(admin)
@@ -256,7 +258,7 @@ contract SavingGroups is Ownable{
     }
 
     function restartRound()
-        public
+        external
         payable
         atStage(Stages.Finished)
         onlyAdmin(admin)
@@ -279,7 +281,7 @@ contract SavingGroups is Ownable{
     }
 
     function payCashIn()
-        public
+        external
         payable
         atStage(Stages.Setup)
         isRegisteredUser(users[msg.sender].currentRoundFlag)
