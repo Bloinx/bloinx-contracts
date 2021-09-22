@@ -1,7 +1,7 @@
 {
   "contractName": "Ownable",
   "abi": [],
-  "metadata": "{\"compiler\":{\"version\":\"0.7.2+commit.51b20bc0\"},\"language\":\"Solidity\",\"output\":{\"abi\":[],\"devdoc\":{\"kind\":\"dev\",\"methods\":{},\"version\":1},\"userdoc\":{\"kind\":\"user\",\"methods\":{},\"version\":1}},\"settings\":{\"compilationTarget\":{\"project:/contracts/Ownable.sol\":\"Ownable\"},\"evmVersion\":\"istanbul\",\"libraries\":{},\"metadata\":{\"bytecodeHash\":\"ipfs\"},\"optimizer\":{\"enabled\":false,\"runs\":200},\"remappings\":[]},\"sources\":{\"project:/contracts/Ownable.sol\":{\"keccak256\":\"0x4d8a853c527ceb05c93bdc2dd4ed66976d4e6e498e82d71d413410f588ca4418\",\"license\":\"MIT\",\"urls\":[\"bzz-raw://eb8cc432855bb5d935ffce646240218546e6bd98d92ea147d433b368d24d1488\",\"dweb:/ipfs/QmYhXMT2B9FqMG8A9tWAFofVNQnVSRNqDutVrdFXyKfaDc\"]}},\"version\":1}",
+  "metadata": "{\"compiler\":{\"version\":\"0.7.4+commit.3f05b770\"},\"language\":\"Solidity\",\"output\":{\"abi\":[],\"devdoc\":{\"kind\":\"dev\",\"methods\":{},\"version\":1},\"userdoc\":{\"kind\":\"user\",\"methods\":{},\"version\":1}},\"settings\":{\"compilationTarget\":{\"project:/contracts/Ownable.sol\":\"Ownable\"},\"evmVersion\":\"istanbul\",\"libraries\":{},\"metadata\":{\"bytecodeHash\":\"ipfs\"},\"optimizer\":{\"enabled\":false,\"runs\":200},\"remappings\":[]},\"sources\":{\"project:/contracts/Ownable.sol\":{\"keccak256\":\"0x96fced1473e078ed55504fc8924be57646027b64c6b5b8eb506c911f4618da12\",\"license\":\"MIT\",\"urls\":[\"bzz-raw://c736868053cad4bf8063e2bd28d1aa1cbe543042901a0e02e02b7ded5a18c7e2\",\"dweb:/ipfs/QmSLvxCjQzB4ZLGtmZNqASZwmaXjSW1soJaLLxf4BzGYLE\"]}},\"version\":1}",
   "bytecode": "0x",
   "deployedBytecode": "0x",
   "immutableReferences": {},
@@ -9,7 +9,7 @@
   "deployedGeneratedSources": [],
   "sourceMap": "",
   "deployedSourceMap": "",
-  "source": "// SPDX-License-Identifier: MIT\npragma solidity ^0.7.2;\n\nabstract contract Ownable {\n    modifier onlyAdmin(address admin) {\n        require(msg.sender == admin, \"Solo el admin puede llamar la funcion\");\n        _;\n    }\n\n    modifier isUsersTurn(address userInTurn) {\n        //Verifies if it is the users round to widraw\n        require(\n            msg.sender == userInTurn,\n            \"Debes esperar tu turno para retirar\"\n        );\n        _;\n    }\n\n    modifier isNotUsersTurn(address userInTurn) {\n        //Verifies if it is not the users round to widraw\n        require(msg.sender != userInTurn, \"En este turno no depositas\");\n        _;\n    }\n\n    modifier isRegisteredUser(bool user) {\n        //Verifies if it is the users round to widraw\n        require(user == true, \"Usuario no registrado\");\n        _;\n    }\n\n    modifier isPayAmountCorrect(uint256 userBalance, uint256 cashIn) {\n        //Verifies if it is the users round to widraw\n        require(userBalance == cashIn, \"Fondos Insuficientes\");\n        _;\n    }\n}\n",
+  "source": "// SPDX-License-Identifier: MIT\npragma solidity ^0.7.4;\n\nabstract contract Ownable {\n    modifier onlyAdmin(address admin) {\n        require(msg.sender == admin, \"Solo el admin puede llamar la funcion\");\n        _;\n    }\n\n    modifier isUsersTurn(address userInTurn) {\n        //Verifies if it is the users round to widraw\n        require(\n            msg.sender == userInTurn,\n            \"Debes esperar tu turno para retirar\"\n        );\n        _;\n    }\n\n    modifier isNotUsersTurn(address userInTurn) {\n        //Verifies if it is not the users round to widraw\n        require(msg.sender != userInTurn, \"En este turno no depositas\");\n        _;\n    }\n\n    modifier isRegisteredUser(bool user) {\n        //Verifies if it is the users round to widraw\n        require(user == true, \"Usuario no registrado\");\n        _;\n    }\n\n    modifier isPayAmountCorrect(uint256 userBalance, uint256 cashIn) {\n        //Verifies if it is the users round to widraw\n        require(userBalance == cashIn, \"Fondos Insuficientes\");\n        _;\n    }\n}\n",
   "sourcePath": "/Users/artur/Desktop/Bloinx/bloinx-contracts/contracts/Ownable.sol",
   "ast": {
     "absolutePath": "project:/contracts/Ownable.sol",
@@ -28,7 +28,7 @@
           "solidity",
           "^",
           "0.7",
-          ".2"
+          ".4"
         ],
         "nodeType": "PragmaDirective",
         "src": "32:23:2"
@@ -940,7 +940,7 @@
             "solidity",
             "^",
             "0.7",
-            ".2"
+            ".4"
           ]
         },
         "id": 80,
@@ -1893,11 +1893,11 @@
   },
   "compiler": {
     "name": "solc",
-    "version": "0.7.2+commit.51b20bc0.Emscripten.clang"
+    "version": "0.7.4+commit.3f05b770.Emscripten.clang"
   },
   "networks": {},
   "schemaVersion": "3.4.2",
-  "updatedAt": "2021-08-11T18:03:31.775Z",
+  "updatedAt": "2021-09-13T02:16:00.438Z",
   "devdoc": {
     "kind": "dev",
     "methods": {},
