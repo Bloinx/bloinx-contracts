@@ -30,7 +30,7 @@ abstract contract Ownable {
 
     modifier isPayAmountCorrect(uint256 userBalance, uint256 cashIn) {
         //Verifies if it is the users round to widraw
-        require(userBalance == cashIn, "Fondos Insuficientes");
+        require(userBalance == cashIn, "Monto incorrecto");
         _;
     }
 }

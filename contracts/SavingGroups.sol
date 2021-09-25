@@ -45,6 +45,12 @@ contract SavingGroups is Ownable{
     uint256 public payTime = 86400 * 7;
     uint256 public withdrawTime = 86400 * 7;
 
+     // BloinxEvents
+    event RegisterUser(address indexed user, uint256 indexed turn);
+    event RemoveUser(address indexed user, uint256 indexed turn);
+    event PayTurn(address indexed user);
+    event PayLateTurn(address indexed user, uint256 indexed turn);
+
     constructor(
         uint256 _cashIn,
         uint256 _saveAmount,
@@ -70,7 +76,7 @@ contract SavingGroups is Ownable{
     }
 
     modifier atStage(Stages _stage) {
-        require(stage == _stage);
+        require(stage == _stage, "Stage incorrecto para ejecutar la funcion");
         _;
     }
 
@@ -92,6 +98,7 @@ contract SavingGroups is Ownable{
             0
         );
         addressOrderList[_userTurn-1]=msg.sender; //store user
+        emit RegisterUser(msg.sender, _userTurn);
     }
 
     function removeUser(uint256 _userTurn)
@@ -107,6 +114,7 @@ contract SavingGroups is Ownable{
           users[removeAddress].userAddr.transfer(cashIn);
       }
       addressOrderList[_userTurn-1]=address(0);
+      emit RemoveUser(users[removeAddress].userAddr, _userTurn);
       usersCounter--;
       cashOutUsers--;
       users[removeAddress].currentRoundFlag = false;
@@ -140,6 +148,7 @@ contract SavingGroups is Ownable{
         } else {
             totalSaveAmount = totalSaveAmount + msg.value;
             users[msg.sender].saveAmountFlag = true;
+            emit PayTurn(msg.sender);
         }
     }
 
