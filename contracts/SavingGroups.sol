@@ -15,12 +15,12 @@ contract SavingGroups is Ownable{
     struct User {
         //Information from each user
         address payable userAddr;
-        uint8 publicuserTurn;
+        uint8 userTurn;
         uint256 availableCashIn; //amount available in CashIn
         uint256 availableSavings;//Amount Available to withdraw
         uint256 amountPaid; //Amount paid by the user
         uint256 assingnedPayments; 
-        uint256 unassingnedPayments;
+        uint256 unassignedPayments;
         uint8 latePayments; //late Payments incurred by the user
         uint256 owedTotalCashIn;
         bool isActive; //defines if the user is participating in the current round
@@ -57,7 +57,7 @@ contract SavingGroups is Ownable{
         require(_admin != address(0), "La direccion del administrador no puede ser cero");
         require(_groupSize > 1 && _groupSize <= 10, "El tamanio del grupo debe ser mayor a uno y menor o igual a 10");
         admin = _admin;
-        cashIn = _cashIn * 1e17;
+        cashIn = _cashIn * 1e17; 
         saveAmount = _saveAmount * 1e17;
         groupSize = _groupSize;
         stage = Stages.Setup;
@@ -77,11 +77,11 @@ contract SavingGroups is Ownable{
         payable
         isPayAmountCorrect(msg.value, cashIn)
         atStage(Stages.Setup) {
-            
+        require(!users[msg.sender].isActive,"Ya estas registrado en esta ronda");    
         require(usersCounter < groupSize, "El grupo esta completo"); //the saving circle is full
         require(addressOrderList[_userTurn-1]==address(0), "Este lugar ya esta ocupado" );
         usersCounter++;
-        users[msg.sender] = User(msg.sender, _userTurn, 0, 0, 0, 0, 0, 0, 0, true); //create user
+        users[msg.sender] = User(msg.sender, _userTurn, msg.value, 0, 0, 0, 0, 0, 0, true); //create user
         totalCashIn = totalCashIn + msg.value;
         addressOrderList[_userTurn-1]=msg.sender; //store user
     }
@@ -128,29 +128,42 @@ contract SavingGroups is Ownable{
         isRegisteredUser(users[msg.sender].isActive)
         atStage(Stages.Save) {
         //users make the payment for the cycle     
-        require(msg.value < futurePayments(), "You are paying more than the total saving amount");
+        require(msg.value <= futurePayments(), "You are paying more than the total saving amount");
         
         //First transaction that will complete saving of currentTurn and will trigger next turn 
-        uint8 realTurn = uint8((block.timestamp - startTime) / payTime);
+        uint8 realTurn = getRealTurn();
         if (turn < realTurn){
             completeSavingsAndAdvanceTurn(); 
         }
         
-        users[msg.sender].unassignedPayments = users[msg.sender].unassignedPayments + msg.value;
+        address userInTurn = addressOrderList[turn-1];
+        
+        //users[msg.sender].unassignedPayments = users[msg.sender].unassignedPayments + msg.value;
+        uint256 deposit = msg.value;
+        users[msg.sender].unassignedPayments+= deposit;
+        
         uint256 obligation = obligationAtTime(msg.sender);
         uint256 debt = obligation - users[msg.sender].amountPaid;
 
+        
+        uint256 paymentToTurn;
+        if (debt < deposit) {
+            paymentToTurn = debt;
+        } else {
+            paymentToTurn = deposit;
+        }
+        
         //Si no he cubierto todos mis pagos hasta el día se asignan al usuario en turno.
         if (debt > 0){ 
-            users[msg.sender].unassignedPayments - debt;
-            users[turn-1].availableSavings = users[turn-1].availableSavings + debt;
-            users[msg.sender].assingnedPayments = users[msg.sender].assingnedPayments + debt;
-            users[msg.sender].amountPaid = users[msg.sender].amountPaid + debt;
+            users[msg.sender].unassignedPayments = users[msg.sender].unassignedPayments - paymentToTurn;
+            users[userInTurn].availableSavings = users[userInTurn].availableSavings + paymentToTurn;
+            users[msg.sender].assingnedPayments = users[msg.sender].assingnedPayments + paymentToTurn;
+            users[msg.sender].amountPaid = users[msg.sender].amountPaid + paymentToTurn;
         }
 
         //Si tengo deuda en el cashIn. Si hay excedente se queda en saldo por asignar
         uint256 debtCashIn = cashIn - users[msg.sender].availableCashIn;
-        if (debtCashIn > 0 & users[msg.sender].unassignedPayments > 0 ){
+        if (debtCashIn > 0 && users[msg.sender].unassignedPayments > 0 ){
             //Si me alcanza para pagar toda la deuda del CashIn y me sobra
             if (debtCashIn <= users[msg.sender].unassignedPayments){
                 users[msg.sender].unassignedPayments = users[msg.sender].unassignedPayments - debtCashIn;
@@ -167,14 +180,24 @@ contract SavingGroups is Ownable{
         }
     }
 
+
+
+
+
+
+
+
+
+
+
     function withdrawTurn()   
         external
         payable
         isRegisteredUser(users[msg.sender].isActive)
         atStage(Stages.Save){  
-        address senderTurn = users[msg.sender].userTurn;
+        uint8 senderTurn = users[msg.sender].userTurn;
         uint8 realTurn = getRealTurn();
-        require(realTurn >= senderTurn, "Espera a llegar a tu turno");  //turn = turno actual de la rosca
+        require(realTurn > senderTurn, "Espera a llegar a tu turno");  //turn = turno actual de la rosca
         
         //First transaction that will complete saving of currentTurn and will trigger next turn 
         //Because this runs each user action, we are sure the user in turn has its availableSavings complete
@@ -200,26 +223,27 @@ contract SavingGroups is Ownable{
         
         for (uint8 i = 0; i < groupSize; i++) {
             address useraddress = addressOrderList[i];
+            address userInTurn = addressOrderList[turn-1];
             uint256 debtUser =  obligationAtTime(useraddress) - users[useraddress].amountPaid;
             //Si el usuario debe
             if (debtUser>0){
                 //Si el cashIn del usuario alcanza para pagar la deuda (1 o menos atrasado)
-                if (users[useraddress].cashIn >= debtUser ){
-                    users[useraddress].cashIn = users[useraddress].cashIn-debtUser; 
+                if (users[useraddress].availableCashIn >= debtUser ){
+                    users[useraddress].availableCashIn = users[useraddress].availableCashIn-debtUser; 
                     users[useraddress].amountPaid = users[useraddress].amountPaid + debtUser;
                     totalCashIn = totalCashIn - debtUser;
-                    users[turn-1].availableSavings = debtUser + users[turn-1].availableSavings;
-                    users[useraddress].owed = users[useraddress].owedTotalCashIn + debtUser;
+                    users[userInTurn].availableSavings = debtUser + users[userInTurn].availableSavings;
+                    users[useraddress].owedTotalCashIn = users[useraddress].owedTotalCashIn + debtUser;
 
                     
                     
                 }else{ //Si el cashIn no alcanza para pagar la deuda (+1 pago atrasado)(no hay cashIn)
-                    uint256 tempCashIn = users[useraddress].cashIn; 
-                    users[useraddress].cashIn = 0; // Se toma el CashIn
+                    uint256 tempCashIn = users[useraddress].availableCashIn; 
+                    users[useraddress].availableCashIn = 0; // Se toma el CashIn
                     users[useraddress].amountPaid = users[useraddress].amountPaid + tempCashIn; //El monto que había en CashIn se usa para pagos
                     totalCashIn = totalCashIn - debtUser;  //tomo la deuda completa del TotalCashIn
                     users[useraddress].owedTotalCashIn =  users[useraddress].owedTotalCashIn + debtUser;
-                    users[turn-1].availableSavings = debtUser + users[turn-1].availableSavings; 
+                    users[userInTurn].availableSavings = debtUser + users[userInTurn].availableSavings; 
                     users[useraddress].latePayments++; 
 
                 }
@@ -238,40 +262,36 @@ contract SavingGroups is Ownable{
         users[msg.sender].availableSavings = users[msg.sender].availableSavings-users[msg.sender].owedTotalCashIn;
         totalCashIn = totalCashIn + users[msg.sender].owedTotalCashIn;
         users[msg.sender].owedTotalCashIn = 0;
-        
-        users[msg.sender].availableSavings = users[msg.sender].availableSavings-users[msg.sender].owedTotalCashIn;
-        
-    } 
+        } 
 
 
     //Cuánto le falta por ahorrar total
     function futurePayments() public view returns (uint256) {
-        uint256 totalSaving = users[msg.sender].amountPaid - (saveAmount*(groupSize-1));
+        uint256 totalSaving = (saveAmount*(groupSize-1));
         uint256 futurePayment = totalSaving - users[msg.sender].amountPaid;
         return futurePayment;
     }
 
     //Returns the total payment the user should have paid at the moment
-    function obligationAtTime(address userAddress) private view returns (uint256) {
+    function obligationAtTime(address userAddress) public view returns (uint256) {
         uint256 expectedObligation;
         if (users[userAddress].userTurn <= turn){
             expectedObligation =  saveAmount * (turn-1);
         } else{
-            expectedObligation =  saveAmount * (turn-1);
+            expectedObligation =  saveAmount * (turn);
         }
         return expectedObligation;
     }
 
-    function getRealTurn() public view returns (uint8){
-        uint8 realTurn = (block.timestamp - startTime) / payTime;
+    function getRealTurn() public view atStage(Stages.Save) returns (uint8){
+        
+        uint8 realTurn = uint8((block.timestamp - startTime) / payTime)+1;
         return (realTurn);
     }
 
-    
-        
-
-
-
-
 
 }
+
+
+
+
