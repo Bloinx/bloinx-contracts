@@ -178,6 +178,12 @@ contract SavingGroups is Ownable{
                 users[msg.sender].assingnedPayments = users[msg.sender].assingnedPayments + paymentCashInTemp;
             }
         }
+
+        if (realTurn > groupSize){
+            endRosca();
+        }
+
+
     }
 
 
@@ -254,6 +260,7 @@ contract SavingGroups is Ownable{
 
         }
         turn++;
+        
                 
     }
 
@@ -288,6 +295,19 @@ contract SavingGroups is Ownable{
         uint8 realTurn = uint8((block.timestamp - startTime) / payTime)+1;
         return (realTurn);
     }
+
+    function endRosca() private atStage(Sages.Save) {
+        for (uint8 i = 0; i < groupSize; i++) {
+            address userAddr = addressOrderList[i];
+            uint256 amountTemp = users[userAddr].availableSavings + users[userAddr].availableCashIn; 
+            users[userAddr].availableSavings = 0;
+            users[userAddr].availableCashIn = 0;
+            users[userAddr].userAddr.transfer(amountTemp);
+            users[userAddr].isActive = false;
+            amountTemp=0;            
+        }
+
+    } 
 
 
 }
