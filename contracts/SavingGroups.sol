@@ -19,7 +19,7 @@ contract SavingGroups is Ownable{
         uint256 availableCashIn; //amount available in CashIn
         uint256 availableSavings;//Amount Available to withdraw
         uint256 amountPaid; //Amount paid by the user
-        uint256 assingnedPayments; //posiblemente se quita.
+        //uint256 assingnedPayments; //posiblemente se quita.
         uint256 unassignedPayments;
         uint8 latePayments; //late Payments incurred by the user
         uint256 owedTotalCashIn; // amount taken in credit from others cashIn
@@ -81,7 +81,7 @@ contract SavingGroups is Ownable{
         require(usersCounter < groupSize, "El grupo esta completo"); //the saving circle is full
         require(addressOrderList[_userTurn-1]==address(0), "Este lugar ya esta ocupado" );
         usersCounter++;
-        users[msg.sender] = User(msg.sender, _userTurn, msg.value, 0, 0, 0, 0, 0, 0, true); //create user
+        users[msg.sender] = User(msg.sender, _userTurn, msg.value, 0, 0, 0, 0, 0, true); //create user
         totalCashIn = totalCashIn + msg.value;
         addressOrderList[_userTurn-1]=msg.sender; //store user
     }
@@ -165,7 +165,7 @@ contract SavingGroups is Ownable{
             //Si no he cubierto todos mis pagos hasta el día se asignan al usuario en turno.
                 users[msg.sender].unassignedPayments = users[msg.sender].unassignedPayments - paymentToTurn;
                 users[userInTurn].availableSavings = users[userInTurn].availableSavings + paymentToTurn;
-                users[msg.sender].assingnedPayments = users[msg.sender].assingnedPayments + paymentToTurn;
+                //users[msg.sender].assingnedPayments = users[msg.sender].assingnedPayments + paymentToTurn;
                 users[msg.sender].amountPaid = users[msg.sender].amountPaid + paymentToTurn;
 
             }
@@ -184,7 +184,7 @@ contract SavingGroups is Ownable{
             
             users[msg.sender].unassignedPayments = users[msg.sender].unassignedPayments - paymentDebtOthers;
             totalCashIn = totalCashIn + paymentDebtOthers;
-            users[msg.sender].assingnedPayments = users[msg.sender].assingnedPayments + paymentDebtOthers;
+            //users[msg.sender].assingnedPayments = users[msg.sender].assingnedPayments + paymentDebtOthers;
                
         }
         
@@ -205,7 +205,7 @@ contract SavingGroups is Ownable{
             users[msg.sender].unassignedPayments = users[msg.sender].unassignedPayments - paymentCashInTemp;
             totalCashIn = totalCashIn + paymentCashInTemp;
             users[msg.sender].availableCashIn = users[msg.sender].availableCashIn + paymentCashInTemp;
-            users[msg.sender].assingnedPayments = users[msg.sender].assingnedPayments + paymentCashInTemp;
+            //users[msg.sender].assingnedPayments = users[msg.sender].assingnedPayments + paymentCashInTemp;
             
             
         } 
@@ -282,7 +282,7 @@ contract SavingGroups is Ownable{
                         users[useraddress].unassignedPayments = users[useraddress].unassignedPayments - toAssign;
                         users[useraddress].amountPaid = users[useraddress].amountPaid + toAssign;
                         users[userInTurn].availableCashIn = users[userInTurn].availableSavings + toAssign; 
-                        users[useraddress].assingnedPayments = users[useraddress].assingnedPayments + toAssign; 
+                        //users[useraddress].assingnedPayments = users[useraddress].assingnedPayments + toAssign; 
                     }
                     
                     //Recalculamos la deuda después de asingación
@@ -352,11 +352,20 @@ contract SavingGroups is Ownable{
         return (realTurn);
     }
 
-    function endRosca() public atStage(Stages.Save) {
+    function endRound() public atStage(Stages.Save) {
         require(getRealTurn() > groupSize);
+        uint256 sumAvailableCashIn = 0;
         for (uint8 i = 0; i < groupSize; i++) {
             address userAddr = addressOrderList[i];
-            uint256 amountTemp = users[userAddr].availableSavings + users[userAddr].availableCashIn; 
+            sumAvailableCashIn += users[userAddr].availableCashIn;
+        }
+        
+        
+        
+        for (uint8 i = 0; i < groupSize; i++) {
+            address userAddr = addressOrderList[i];
+            uint256 realCashIn = users[userAddr].availableCashIn/sumAvailableCashIn; 
+            uint256 amountTemp = users[userAddr].availableSavings + realCashIn; 
             users[userAddr].availableSavings = 0;
             users[userAddr].availableCashIn = 0;
             users[userAddr].userAddr.transfer(amountTemp);
