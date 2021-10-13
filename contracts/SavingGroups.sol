@@ -163,11 +163,11 @@ contract SavingGroups is Ownable{
                 }
                 
             //Si no he cubierto todos mis pagos hasta el día se asignan al usuario en turno.
-            users[msg.sender].unassignedPayments = users[msg.sender].unassignedPayments - paymentToTurn;
-            users[userInTurn].availableSavings = users[userInTurn].availableSavings + paymentToTurn;
-            users[msg.sender].assingnedPayments = users[msg.sender].assingnedPayments + paymentToTurn;
-            users[msg.sender].amountPaid = users[msg.sender].amountPaid + paymentToTurn;
-            //}
+                users[msg.sender].unassignedPayments = users[msg.sender].unassignedPayments - paymentToTurn;
+                users[userInTurn].availableSavings = users[userInTurn].availableSavings + paymentToTurn;
+                users[msg.sender].assingnedPayments = users[msg.sender].assingnedPayments + paymentToTurn;
+                users[msg.sender].amountPaid = users[msg.sender].amountPaid + paymentToTurn;
+
             }
         }
         
@@ -252,7 +252,7 @@ contract SavingGroups is Ownable{
             address userInTurn = addressOrderList[turn-1];
             uint256 obligation = obligationAtTime(useraddress);
             uint256 debtUser;
-            uint256 payments = users[useraddress].amountPaid + users[useraddress].unassignedPayments ;
+            
                 
             if(useraddress != userInTurn){  
                 
@@ -319,11 +319,12 @@ contract SavingGroups is Ownable{
     }
 
 
-    function payLateFromSavings() private atStage(Stages.Save){  //savings are complete at the time this function runs
-        users[msg.sender].availableSavings = users[msg.sender].availableSavings-users[msg.sender].owedTotalCashIn;
-        totalCashIn = totalCashIn + users[msg.sender].owedTotalCashIn;
+    function payLateFromSavings() internal atStage(Stages.Save){  //savings are complete at the time this function runs
+        uint256 debtOwnCashIn = cashIn - users[msg.sender].availableCashIn;
+        users[msg.sender].availableSavings = users[msg.sender].availableSavings-users[msg.sender].owedTotalCashIn - debtOwnCashIn;
+        totalCashIn = totalCashIn + users[msg.sender].owedTotalCashIn + debtOwnCashIn;
+        users[msg.sender].availableCashIn = cashIn;
         users[msg.sender].owedTotalCashIn = 0;
-        
         } 
 
 
@@ -367,4 +368,3 @@ contract SavingGroups is Ownable{
 
 
 }
-
