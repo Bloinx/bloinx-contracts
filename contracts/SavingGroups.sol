@@ -19,10 +19,10 @@ contract SavingGroups is Ownable{
         uint256 availableCashIn; //amount available in CashIn
         uint256 availableSavings;//Amount Available to withdraw
         uint256 amountPaid; //Amount paid by the user
-        uint256 assingnedPayments; 
+        uint256 assingnedPayments; //posiblemente se quita.
         uint256 unassignedPayments;
         uint8 latePayments; //late Payments incurred by the user
-        uint256 owedTotalCashIn;
+        uint256 owedTotalCashIn; // amount taken in credit from others cashIn
         bool isActive; //defines if the user is participating in the current round
     }
 
@@ -57,8 +57,8 @@ contract SavingGroups is Ownable{
         require(_admin != address(0), "La direccion del administrador no puede ser cero");
         require(_groupSize > 1 && _groupSize <= 10, "El tamanio del grupo debe ser mayor a uno y menor o igual a 10");
         admin = _admin;
-        cashIn = _cashIn * 1e17; 
-        saveAmount = _saveAmount * 1e17;
+        cashIn = _cashIn * 1e18; 
+        saveAmount = _saveAmount * 1e18;
         groupSize = _groupSize;
         stage = Stages.Setup;
         addressOrderList = new address[](_groupSize);
@@ -137,64 +137,84 @@ contract SavingGroups is Ownable{
         }
         
         address userInTurn = addressOrderList[turn-1];
-        
-        //users[msg.sender].unassignedPayments = users[msg.sender].unassignedPayments + msg.value;
         uint256 deposit = msg.value;
         users[msg.sender].unassignedPayments+= deposit;
         
+    
+        //If userInTurn = msg.sender : se queda en unassigned
+        
+        
+        
         uint256 obligation = obligationAtTime(msg.sender);
-        uint256 debt = obligation - users[msg.sender].amountPaid;
-
-        
+        uint256 debt;
         uint256 paymentToTurn;
-        if (debt < deposit) {
-            paymentToTurn = debt;
-        } else {
-            paymentToTurn = deposit;
-        }
         
-        //Si no he cubierto todos mis pagos hasta el día se asignan al usuario en turno.
-        if (debt > 0){ 
+        // PAGO DEUDA DEL TURNO CORRIENTE
+        if (obligation <= users[msg.sender].amountPaid){  //no hay deuda del turno corriente
+            debt = 0; 
+        } else {  //hay deuda del turno corriente
+            debt = obligation - users[msg.sender].amountPaid; 
+            
+            if (userInTurn != msg.sender){
+                if (debt < deposit) { 
+                    paymentToTurn = debt;
+                } else {
+                    paymentToTurn = deposit;
+                }
+                
+            //Si no he cubierto todos mis pagos hasta el día se asignan al usuario en turno.
             users[msg.sender].unassignedPayments = users[msg.sender].unassignedPayments - paymentToTurn;
             users[userInTurn].availableSavings = users[userInTurn].availableSavings + paymentToTurn;
             users[msg.sender].assingnedPayments = users[msg.sender].assingnedPayments + paymentToTurn;
             users[msg.sender].amountPaid = users[msg.sender].amountPaid + paymentToTurn;
+            //}
+            }
         }
+        
+        //PAGO DEUDA DEL CASHIN TOTAL
+        
+        
+        if (users[msg.sender].owedTotalCashIn > 0 && users[msg.sender].unassignedPayments > 0 ){
+            uint256 paymentDebtOthers;
+            if (users[msg.sender].owedTotalCashIn <= users[msg.sender].unassignedPayments){ //unnasigned excede o iguala la deuda del cashIn
+                paymentDebtOthers = users[msg.sender].owedTotalCashIn;
+            } else {
+                paymentDebtOthers = users[msg.sender].unassignedPayments;  //cubre parcialmente la deuda del cashIn
+            }
+            
+            users[msg.sender].unassignedPayments = users[msg.sender].unassignedPayments - paymentDebtOthers;
+            totalCashIn = totalCashIn + paymentDebtOthers;
+            users[msg.sender].assingnedPayments = users[msg.sender].assingnedPayments + paymentDebtOthers;
+               
+        }
+        
+        
+        
 
         //Si tengo deuda en el cashIn. Si hay excedente se queda en saldo por asignar
         uint256 debtCashIn = cashIn - users[msg.sender].availableCashIn;
         if (debtCashIn > 0 && users[msg.sender].unassignedPayments > 0 ){
             //Si me alcanza para pagar toda la deuda del CashIn y me sobra
-            if (debtCashIn <= users[msg.sender].unassignedPayments){
-                users[msg.sender].unassignedPayments = users[msg.sender].unassignedPayments - debtCashIn;
-                totalCashIn = totalCashIn + debtCashIn;
-                users[msg.sender].availableCashIn = users[msg.sender].availableCashIn + debtCashIn;
-                users[msg.sender].assingnedPayments = users[msg.sender].assingnedPayments + debtCashIn;
-            } else {  //Si no alcanzo a cubrir el pago completo del cash In
-                uint256 paymentCashInTemp = users[msg.sender].unassignedPayments; //abono chiquito al cashIn
-                users[msg.sender].unassignedPayments = 0;
-                totalCashIn = totalCashIn + paymentCashInTemp;
-                users[msg.sender].availableCashIn = users[msg.sender].availableCashIn + paymentCashInTemp;
-                users[msg.sender].assingnedPayments = users[msg.sender].assingnedPayments + paymentCashInTemp;
+            uint256 paymentCashInTemp;
+            if (debtCashIn <= users[msg.sender].unassignedPayments){ //unnasigned excede o iguala la deuda del cashIn
+                paymentCashInTemp = debtCashIn;
+            } else {
+                paymentCashInTemp = users[msg.sender].unassignedPayments;  //cubre parcialmente la deuda del cashIn
             }
-        }
-
-        if (realTurn > groupSize){
-            endRosca();
-        }
-
+            
+            users[msg.sender].unassignedPayments = users[msg.sender].unassignedPayments - paymentCashInTemp;
+            totalCashIn = totalCashIn + paymentCashInTemp;
+            users[msg.sender].availableCashIn = users[msg.sender].availableCashIn + paymentCashInTemp;
+            users[msg.sender].assingnedPayments = users[msg.sender].assingnedPayments + paymentCashInTemp;
+            
+            
+        } 
+        
 
     }
 
 
-
-
-
-
-
-
-
-
+    
 
     function withdrawTurn()   
         external
@@ -230,34 +250,68 @@ contract SavingGroups is Ownable{
         for (uint8 i = 0; i < groupSize; i++) {
             address useraddress = addressOrderList[i];
             address userInTurn = addressOrderList[turn-1];
-            uint256 debtUser =  obligationAtTime(useraddress) - users[useraddress].amountPaid;
-            //Si el usuario debe
-            if (debtUser>0){
-                //Si el cashIn del usuario alcanza para pagar la deuda (1 o menos atrasado)
-                if (users[useraddress].availableCashIn >= debtUser ){
-                    users[useraddress].availableCashIn = users[useraddress].availableCashIn-debtUser; 
-                    users[useraddress].amountPaid = users[useraddress].amountPaid + debtUser;
-                    totalCashIn = totalCashIn - debtUser;
-                    users[userInTurn].availableSavings = debtUser + users[userInTurn].availableSavings;
-                    users[useraddress].owedTotalCashIn = users[useraddress].owedTotalCashIn + debtUser;
-
+            uint256 obligation = obligationAtTime(useraddress);
+            uint256 debtUser;
+            uint256 payments = users[useraddress].amountPaid + users[useraddress].unassignedPayments ;
+                
+            if(useraddress != userInTurn){  
+                
+                //Assign unassignedPayments
+                
+                if (obligation > users[useraddress].amountPaid){  //Si hay monto pendiente por cubrir el turno
+                    debtUser = obligation - users[useraddress].amountPaid; //Monto pendiente por asignar 
+                } else {
+                    debtUser = 0;
                     
-                    
-                }else{ //Si el cashIn no alcanza para pagar la deuda (+1 pago atrasado)(no hay cashIn)
-                    uint256 tempCashIn = users[useraddress].availableCashIn; 
-                    users[useraddress].availableCashIn = 0; // Se toma el CashIn
-                    users[useraddress].amountPaid = users[useraddress].amountPaid + tempCashIn; //El monto que había en CashIn se usa para pagos
-                    totalCashIn = totalCashIn - debtUser;  //tomo la deuda completa del TotalCashIn
-                    users[useraddress].owedTotalCashIn =  users[useraddress].owedTotalCashIn + debtUser;
-                    users[userInTurn].availableSavings = debtUser + users[userInTurn].availableSavings; 
-                    users[useraddress].latePayments++; 
-
                 }
                 
-
-            }
-            
-
+                
+                //Si el usuario debe
+                if (debtUser>0){
+                    
+                    //Asignamos pagos pendientes
+                    if(users[useraddress].unassignedPayments > 0){
+                        uint256 toAssign;
+                        
+                        if (debtUser < users[useraddress].unassignedPayments) { //se paga toda la deuda y sigue con saldo a favor
+                            toAssign = debtUser;
+                        } else {
+                            toAssign = users[useraddress].unassignedPayments;
+                            
+                        }  
+                        users[useraddress].unassignedPayments = users[useraddress].unassignedPayments - toAssign;
+                        users[useraddress].amountPaid = users[useraddress].amountPaid + toAssign;
+                        users[userInTurn].availableCashIn = users[userInTurn].availableSavings + toAssign; 
+                        users[useraddress].assingnedPayments = users[useraddress].assingnedPayments + toAssign; 
+                    }
+                    
+                    //Recalculamos la deuda después de asingación
+                    debtUser =  obligationAtTime(useraddress) - users[useraddress].amountPaid;
+                    
+                    // Si aún sigue habiendo deuda se paga del cashIn
+                    if (debtUser>0){
+                        users[useraddress].latePayments++; //Se marca deudor
+                        uint256 tempCashIn;
+                        //Si el cashIn del usuario alcanza para pagar la deuda (1 o menos atrasado)
+                        if (users[useraddress].availableCashIn >= debtUser ){
+                            tempCashIn= debtUser;
+                        }else{  //más de 1 atrasado
+                            tempCashIn= users[useraddress].availableCashIn; 
+                        }
+                        
+                        users[useraddress].availableCashIn = users[useraddress].availableCashIn-tempCashIn; 
+                        users[useraddress].amountPaid = users[useraddress].amountPaid + tempCashIn;
+                        totalCashIn = totalCashIn - debtUser;
+                        users[userInTurn].availableSavings = users[userInTurn].availableSavings + debtUser ;
+                        users[useraddress].owedTotalCashIn = users[useraddress].owedTotalCashIn + debtUser;  //Lo que se debe a la bolsa de CashIn
+        
+                        
+                    }
+    
+                }
+                
+    
+            }    
         }
         turn++;
         
@@ -265,17 +319,18 @@ contract SavingGroups is Ownable{
     }
 
 
-    function payLateFromSavings() private atStage(Stages.Save){
+    function payLateFromSavings() private atStage(Stages.Save){  //savings are complete at the time this function runs
         users[msg.sender].availableSavings = users[msg.sender].availableSavings-users[msg.sender].owedTotalCashIn;
         totalCashIn = totalCashIn + users[msg.sender].owedTotalCashIn;
         users[msg.sender].owedTotalCashIn = 0;
+        
         } 
 
 
     //Cuánto le falta por ahorrar total
     function futurePayments() public view returns (uint256) {
         uint256 totalSaving = (saveAmount*(groupSize-1));
-        uint256 futurePayment = totalSaving - users[msg.sender].amountPaid;
+        uint256 futurePayment = totalSaving - users[msg.sender].amountPaid - users[msg.sender].unassignedPayments;
         return futurePayment;
     }
 
@@ -296,7 +351,8 @@ contract SavingGroups is Ownable{
         return (realTurn);
     }
 
-    function endRosca() private atStage(Sages.Save) {
+    function endRosca() public atStage(Stages.Save) {
+        require(getRealTurn() > groupSize);
         for (uint8 i = 0; i < groupSize; i++) {
             address userAddr = addressOrderList[i];
             uint256 amountTemp = users[userAddr].availableSavings + users[userAddr].availableCashIn; 
@@ -311,7 +367,4 @@ contract SavingGroups is Ownable{
 
 
 }
-
-
-
 
