@@ -17,6 +17,7 @@
   "author": "ArturVargas",
   "license": "ISC",
   "dependencies": {
+    "@openzeppelin/test-helpers": "^0.5.13",
     "@truffle/hdwallet-provider": "^1.4.1",
     "dotenv": "^10.0.0"
   }

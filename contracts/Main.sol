@@ -4,7 +4,7 @@ pragma solidity ^0.7.4;
 import "./SavingGroups.sol";
 
 contract Main{
-    event RoundCreated(SavingGroups childTanda);
+    event RoundCreated(SavingGroups childRound);
 
     function createRound(uint256 _warranty, uint256 _saving, uint256 _groupSize, uint256 _payTime, uint256 _withdrawTime) external payable returns(address) {
 
