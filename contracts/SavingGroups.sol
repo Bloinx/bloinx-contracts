@@ -48,6 +48,12 @@ contract SavingGroups is Modifiers{
     
 
 
+     // BloinxEvents
+    event RegisterUser(address indexed user, uint256 indexed turn);
+    event RemoveUser(address indexed user, uint256 indexed turn);
+    event PayTurn(address indexed user);
+    event PayLateTurn(address indexed user, uint256 indexed turn);
+
     constructor(
         uint256 _cashIn,
         uint256 _saveAmount,
@@ -68,7 +74,7 @@ contract SavingGroups is Modifiers{
     }
 
     modifier atStage(Stages _stage) {
-        require(stage == _stage);
+        require(stage == _stage, "Stage incorrecto para ejecutar la funcion");
         _;
     }
 
@@ -84,6 +90,7 @@ contract SavingGroups is Modifiers{
         users[msg.sender] = User(msg.sender, _userTurn, msg.value, 0, 0, 0, 0, 0, true); //create user
         totalCashIn = totalCashIn + msg.value;
         addressOrderList[_userTurn-1]=msg.sender; //store user
+        emit RegisterUser(msg.sender, _userTurn);
     }
 
 
