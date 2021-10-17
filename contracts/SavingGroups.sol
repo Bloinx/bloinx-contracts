@@ -2,9 +2,9 @@
 pragma solidity ^0.7.4;
 pragma experimental ABIEncoderV2;
 
-import "./Ownable.sol";
+import "./Modifiers.sol";
 
-contract SavingGroups is Ownable{
+contract SavingGroups is Modifiers{
     enum Stages {
         //Stages of the round
         Setup,
