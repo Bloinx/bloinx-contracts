@@ -4,7 +4,7 @@ pragma experimental ABIEncoderV2;
 
 import "./Ownable.sol";
 
-contract SavingGroups is Ownable{
+contract SavingGroups is Modifiers{
     enum Stages {
         //Stages of the round
         Setup,
