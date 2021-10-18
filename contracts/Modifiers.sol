@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.7.4;
 
-abstract contract Ownable {
+abstract contract Modifiers {
     modifier onlyAdmin(address admin) {
         require(msg.sender == admin, "Solo el admin puede llamar la funcion");
         _;
