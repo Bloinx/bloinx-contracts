@@ -2,9 +2,9 @@
 pragma solidity ^0.7.4;
 pragma experimental ABIEncoderV2;
 
-import "./Modifiers.sol";
+import "./Ownable.sol";
 
-contract SavingGroups is Modifiers{
+contract SavingGroups is Ownable{
     enum Stages {
         //Stages of the round
         Setup,
@@ -354,6 +354,9 @@ contract SavingGroups is Modifiers{
 
     function endRound() public atStage(Stages.Save) {
         require(getRealTurn() > groupSize);
+        
+        
+        
         uint256 sumAvailableCashIn = 0;
         for (uint8 i = 0; i < groupSize; i++) {
             address userAddr = addressOrderList[i];
@@ -374,6 +377,51 @@ contract SavingGroups is Modifiers{
         }
 
     } 
-
+    
+    
+    //Getters
+    
+    function getUserTurn(uint8 _userTurn) public view returns (uint8){
+        address userAddr = addressOrderList[_userTurn-1];
+        return(users[userAddr].userTurn);
+    }
+    
+        
+    function getUserAvailableCashIn(uint8 _userTurn) public view returns (uint256){
+        address userAddr = addressOrderList[_userTurn-1];
+        return(users[userAddr].availableCashIn);
+    }
+        
+    function getUserAvailableSavings(uint8 _userTurn) public view returns (uint256){
+        address userAddr = addressOrderList[_userTurn-1];
+        return(users[userAddr].availableSavings);
+    }
+        
+    function getUserAmountPaid(uint8 _userTurn) public view returns (uint256){
+        address userAddr = addressOrderList[_userTurn-1];
+        return(users[userAddr].amountPaid);
+    }    
+        
+    function getUserUnassignedPayments(uint8 _userTurn) public view returns (uint256){
+        address userAddr = addressOrderList[_userTurn-1];
+        return(users[userAddr].unassignedPayments);
+    }        
+        
+    function getUserLatePayments(uint8 _userTurn) public view returns (uint8){
+        address userAddr = addressOrderList[_userTurn-1];
+        return(users[userAddr].latePayments);
+    }    
+    
+    function getUserOwedTotalCashIn(uint8 _userTurn) public view returns (uint256){
+        address userAddr = addressOrderList[_userTurn-1];
+        return(users[userAddr].owedTotalCashIn);
+    }    
+    
+    function getUserIsActive(uint8 _userTurn) public view returns (bool){
+        address userAddr = addressOrderList[_userTurn-1];
+        return(users[userAddr].isActive);
+    }    
+    
+    
 
 }
