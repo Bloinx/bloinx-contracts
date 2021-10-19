@@ -233,7 +233,7 @@ contract SavingGroups is Modifiers{
 
         // Paga adeudos pendientes de availableSavings
         if (obligationAtTime(msg.sender) > users[msg.sender].amountPaid){
-            payLateFromSavings();
+            payLateFromSavings(msg.sender);
         }
        
         uint256 savedAmountTemp = users[msg.sender].availableSavings;
@@ -319,12 +319,12 @@ contract SavingGroups is Modifiers{
     }
 
 
-    function payLateFromSavings() internal atStage(Stages.Save){  //savings are complete at the time this function runs
-        uint256 debtOwnCashIn = cashIn - users[msg.sender].availableCashIn;
-        users[msg.sender].availableSavings = users[msg.sender].availableSavings-users[msg.sender].owedTotalCashIn - debtOwnCashIn;
-        totalCashIn = totalCashIn + users[msg.sender].owedTotalCashIn + debtOwnCashIn;
-        users[msg.sender].availableCashIn = cashIn;
-        users[msg.sender].owedTotalCashIn = 0;
+    function payLateFromSavings(address _userAddress) internal atStage(Stages.Save){  //savings are complete at the time this function runs
+        uint256 debtOwnCashIn = cashIn - users[_userAddress].availableCashIn;
+        users[_userAddress].availableSavings = users[_userAddress].availableSavings-users[_userAddress].owedTotalCashIn - debtOwnCashIn;
+        totalCashIn = totalCashIn + users[_userAddress].owedTotalCashIn + debtOwnCashIn;
+        users[_userAddress].availableCashIn = cashIn;
+        users[_userAddress].owedTotalCashIn = 0;
         } 
 
 
@@ -363,6 +363,8 @@ contract SavingGroups is Modifiers{
         for (uint8 i = 0; i < groupSize; i++) {
             address userAddr = addressOrderList[i];
             sumAvailableCashIn += users[userAddr].availableCashIn;
+            payLateFromSavings(userAddr);
+            
         }
         
         
@@ -429,10 +431,6 @@ contract SavingGroups is Modifiers{
     
 
 }
-
-
-
-
 
 
 
