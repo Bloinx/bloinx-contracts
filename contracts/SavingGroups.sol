@@ -281,7 +281,7 @@ contract SavingGroups is Modifiers{
                         }  
                         users[useraddress].unassignedPayments = users[useraddress].unassignedPayments - toAssign;
                         users[useraddress].amountPaid = users[useraddress].amountPaid + toAssign;
-                        users[userInTurn].availableCashIn = users[userInTurn].availableSavings + toAssign; 
+                        users[userInTurn].availableSavings = users[userInTurn].availableSavings + toAssign; 
                         //users[useraddress].assingnedPayments = users[useraddress].assingnedPayments + toAssign; 
                     }
                     
@@ -356,6 +356,8 @@ contract SavingGroups is Modifiers{
         require(getRealTurn() > groupSize);
         
         
+        completeSavingsAndAdvanceTurn(); 
+        
         
         uint256 sumAvailableCashIn = 0;
         for (uint8 i = 0; i < groupSize; i++) {
@@ -367,14 +369,16 @@ contract SavingGroups is Modifiers{
         
         for (uint8 i = 0; i < groupSize; i++) {
             address userAddr = addressOrderList[i];
-            uint256 realCashIn = users[userAddr].availableCashIn/sumAvailableCashIn; 
-            uint256 amountTemp = users[userAddr].availableSavings + realCashIn; 
+            uint256 realCashInProp = users[userAddr].availableCashIn/sumAvailableCashIn; 
+            uint256 amountTemp = users[userAddr].availableSavings + (realCashInProp * totalCashIn); 
             users[userAddr].availableSavings = 0;
             users[userAddr].availableCashIn = 0;
             users[userAddr].userAddr.transfer(amountTemp);
             users[userAddr].isActive = false;
             amountTemp=0;            
         }
+        
+        stage = Stages.Finished;        
 
     } 
     
@@ -425,3 +429,10 @@ contract SavingGroups is Modifiers{
     
 
 }
+
+
+
+
+
+
+
