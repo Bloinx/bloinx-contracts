@@ -45,8 +45,8 @@ contract SavingGroups is Modifiers{
     //Time constants in seconds
     // Weekly by Default
     uint256 public payTime = 86400 * 7;
-    
-
+    uint256 public feeCost = 0;
+    address payable public constant devAddress = 0x84052CEc1d08cF2eB93ffBaB096b88b455Bb9EEE;
 
      // BloinxEvents
     event RegisterUser(address indexed user, uint256 indexed turn);
@@ -68,9 +68,9 @@ contract SavingGroups is Modifiers{
         groupSize = _groupSize;
         stage = Stages.Setup;
         addressOrderList = new address[](_groupSize);
-        //latePaymentsList = new uint256[](_groupSize);
         require(_payTime > 0, "El tiempo para pagar no puede ser menor a un dia");
-        payTime = _payTime;//86400 * _payTime;
+        payTime = 86400 * _payTime;
+        feeCost = (saveAmount / 10000) * 500; // calculate 5% fee
     }
 
     modifier atStage(Stages _stage) {
@@ -81,19 +81,19 @@ contract SavingGroups is Modifiers{
     function registerUser(uint8 _userTurn)
         external
         payable
-        isPayAmountCorrect(msg.value, cashIn)
+        isPayAmountCorrect(msg.value, cashIn, feeCost)
         atStage(Stages.Setup) {
         require(!users[msg.sender].isActive,"Ya estas registrado en esta ronda");    
         require(usersCounter < groupSize, "El grupo esta completo"); //the saving circle is full
         require(addressOrderList[_userTurn-1]==address(0), "Este lugar ya esta ocupado" );
         usersCounter++;
-        users[msg.sender] = User(msg.sender, _userTurn, msg.value, 0, 0, 0, 0, 0, true); //create user
+        users[msg.sender] = User(msg.sender, _userTurn, cashIn, 0, 0, 0, 0, 0, true); //create user
         totalCashIn = totalCashIn + msg.value;
+        uint256 totalFee = msg.value - cashIn;
+        devAddress.transfer(totalFee);
         addressOrderList[_userTurn-1]=msg.sender; //store user
         emit RegisterUser(msg.sender, _userTurn);
     }
-
-
 
 
     function removeUser(uint256 _userTurn)

@@ -28,9 +28,10 @@ abstract contract Modifiers {
         _;
     }
 
-    modifier isPayAmountCorrect(uint256 userBalance, uint256 cashIn) {
+    modifier isPayAmountCorrect(uint256 userBalance, uint256 cashIn, uint256 feeCost) {
         //Verifies if it is the users round to widraw
-        require(userBalance == cashIn, "Monto incorrecto");
+        uint256 totalAmount = cashIn + feeCost;
+        require(userBalance == totalAmount, "Monto incorrecto");
         _;
     }
 }
