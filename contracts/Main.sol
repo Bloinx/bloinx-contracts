@@ -6,9 +6,9 @@ import "./SavingGroups.sol";
 contract Main{
     event RoundCreated(SavingGroups childRound);
 
-    function createRound(uint256 _warranty, uint256 _saving, uint256 _groupSize, uint256 _payTime, uint256 _withdrawTime) external payable returns(address) {
+    function createRound(uint256 _warranty, uint256 _saving, uint256 _groupSize, uint256 _payTime) external payable returns(address) {
 
-        SavingGroups newRound = new SavingGroups(_warranty, _saving, _groupSize, msg.sender, _payTime, _withdrawTime);
+        SavingGroups newRound = new SavingGroups(_warranty, _saving, _groupSize, msg.sender, _payTime);
         emit RoundCreated(newRound);
         return address(newRound);
     }

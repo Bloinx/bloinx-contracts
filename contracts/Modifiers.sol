@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.7.4;
 
-abstract contract Ownable {
+abstract contract Modifiers {
     modifier onlyAdmin(address admin) {
         require(msg.sender == admin, "Solo el admin puede llamar la funcion");
         _;
@@ -28,9 +28,10 @@ abstract contract Ownable {
         _;
     }
 
-    modifier isPayAmountCorrect(uint256 userBalance, uint256 cashIn) {
+    modifier isPayAmountCorrect(uint256 userBalance, uint256 cashIn, uint256 feeCost) {
         //Verifies if it is the users round to widraw
-        require(userBalance == cashIn, "Monto incorrecto");
+        uint256 totalAmount = cashIn + feeCost;
+        require(userBalance == totalAmount, "Monto incorrecto");
         _;
     }
 }
