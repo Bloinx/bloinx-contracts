@@ -36,7 +36,7 @@ contract SavingGroups is Modifiers{
 
     //Counters and flags
     uint256 usersCounter = 0;
-    uint256 public turn = 1; //Current cycle/round in the saving circle
+    uint8 public turn = 1; //Current cycle/round in the saving circle
     uint256 public startTime;
     address[] public addressOrderList;
     uint256 public totalCashIn = 0;
@@ -47,14 +47,8 @@ contract SavingGroups is Modifiers{
     uint256 public payTime = 86400 * 7;
     uint256 public feeCost = 0;
     address payable public constant devAddress = 0x84052CEc1d08cF2eB93ffBaB096b88b455Bb9EEE;
-
-     // BloinxEvents
-    event RegisterUser(address indexed user, uint256 indexed turn);
-    event RemoveUser(address indexed user, uint256 indexed turn);
-    event PayTurn(address indexed user);
-    event PayLateTurn(address indexed user, uint256 indexed turn);
-
-     // BloinxEvents
+    
+    // BloinxEvents
     event RegisterUser(address indexed user, uint256 indexed turn);
     event RemoveUser(address indexed user, uint256 indexed turn);
     event PayTurn(address indexed user);
@@ -101,7 +95,6 @@ contract SavingGroups is Modifiers{
         emit RegisterUser(msg.sender, _userTurn);
     }
 
-
     function removeUser(uint256 _userTurn)
         external
         payable
@@ -131,7 +124,6 @@ contract SavingGroups is Modifiers{
         startTime= block.timestamp;
     }
 
-
     //Permite adelantar pagos o hacer abonos chiquitos
     //Primero se verifica si hay pagos pendientes al día y se abonan, si sobra se verifica si se debe algo al CashIn y se abona
     function addPayment() 
@@ -145,15 +137,13 @@ contract SavingGroups is Modifiers{
         //First transaction that will complete saving of currentTurn and will trigger next turn 
         uint8 realTurn = getRealTurn();
         if (turn < realTurn){
-            completeSavingsAndAdvanceTurn(); 
+            completeSavingsAndAdvanceTurn(turn); 
         }
         
         address userInTurn = addressOrderList[turn-1];
         uint256 deposit = msg.value;
-        users[msg.sender].unassignedPayments+= deposit;
+        users[msg.sender].unassignedPayments+= deposit;   
         
-    
-        //If userInTurn = msg.sender : se queda en unassigned
         uint256 obligation = obligationAtTime(msg.sender);
         uint256 debt;
         uint256 paymentToTurn;
@@ -191,9 +181,8 @@ contract SavingGroups is Modifiers{
             
             users[msg.sender].unassignedPayments = users[msg.sender].unassignedPayments - paymentDebtOthers;
             totalCashIn = totalCashIn + paymentDebtOthers;
-            //users[msg.sender].assingnedPayments = users[msg.sender].assingnedPayments + paymentDebtOthers;
         }
-
+        
         //Si tengo deuda en el cashIn. Si hay excedente se queda en saldo por asignar
         uint256 debtCashIn = cashIn - users[msg.sender].availableCashIn;
         if (debtCashIn > 0 && users[msg.sender].unassignedPayments > 0 ){
@@ -208,11 +197,9 @@ contract SavingGroups is Modifiers{
             users[msg.sender].unassignedPayments = users[msg.sender].unassignedPayments - paymentCashInTemp;
             totalCashIn = totalCashIn + paymentCashInTemp;
             users[msg.sender].availableCashIn = users[msg.sender].availableCashIn + paymentCashInTemp;
-            //users[msg.sender].assingnedPayments = users[msg.sender].assingnedPayments + paymentCashInTemp;
+            //users[msg.sender].assingnedPayments = users[msg.sender].assingnedPayments + paymentCashInTemp;    
         } 
-
     }
-    
 
     function withdrawTurn()   
         external
@@ -226,7 +213,7 @@ contract SavingGroups is Modifiers{
         //First transaction that will complete saving of currentTurn and will trigger next turn 
         //Because this runs each user action, we are sure the user in turn has its availableSavings complete
         if (turn < realTurn){
-            completeSavingsAndAdvanceTurn(); 
+            completeSavingsAndAdvanceTurn(turn); 
         }
 
         // Paga adeudos pendientes de availableSavings
@@ -240,48 +227,39 @@ contract SavingGroups is Modifiers{
         savedAmountTemp=0;    
     }
 
-
     //Esta funcion se verifica que daba correr cada que se reliza un movimiento por parte de un usuario, 
     //solo correrá si es la primera vez que se corre en un turno, ya sea acción de retiro o pago.
-    function completeSavingsAndAdvanceTurn() private atStage(Stages.Save) {
-        
+    function completeSavingsAndAdvanceTurn(uint8 turno) private atStage(Stages.Save) {
         for (uint8 i = 0; i < groupSize; i++) {
             address useraddress = addressOrderList[i];
-            address userInTurn = addressOrderList[turn-1];
+            address userInTurn = addressOrderList[turno-1];
             uint256 obligation = obligationAtTime(useraddress);
             uint256 debtUser;
+            
                 
             if(useraddress != userInTurn){  
                 //Assign unassignedPayments
-                
                 if (obligation > users[useraddress].amountPaid){  //Si hay monto pendiente por cubrir el turno
                     debtUser = obligation - users[useraddress].amountPaid; //Monto pendiente por asignar 
                 } else {
                     debtUser = 0;
                 }
-                
                 //Si el usuario debe
                 if (debtUser>0){
-                    
                     //Asignamos pagos pendientes
                     if(users[useraddress].unassignedPayments > 0){
                         uint256 toAssign;
-                        
                         if (debtUser < users[useraddress].unassignedPayments) { //se paga toda la deuda y sigue con saldo a favor
                             toAssign = debtUser;
                         } else {
                             toAssign = users[useraddress].unassignedPayments;
-                            
                         }  
                         users[useraddress].unassignedPayments = users[useraddress].unassignedPayments - toAssign;
                         users[useraddress].amountPaid = users[useraddress].amountPaid + toAssign;
                         users[userInTurn].availableSavings = users[userInTurn].availableSavings + toAssign; 
-                        //users[useraddress].assingnedPayments = users[useraddress].assingnedPayments + toAssign; 
                     }
-                    
                     //Recalculamos la deuda después de asingación
                     debtUser =  obligationAtTime(useraddress) - users[useraddress].amountPaid;
-                    
                     // Si aún sigue habiendo deuda se paga del cashIn
                     if (debtUser>0){
                         users[useraddress].latePayments++; //Se marca deudor
@@ -298,15 +276,11 @@ contract SavingGroups is Modifiers{
                         totalCashIn = totalCashIn - debtUser;
                         users[userInTurn].availableSavings = users[userInTurn].availableSavings + debtUser ;
                         users[useraddress].owedTotalCashIn = users[useraddress].owedTotalCashIn + debtUser;  //Lo que se debe a la bolsa de CashIn
-    
                     }
-    
                 }
-                
             }    
         }
         turn++;
-    
     }
 
     function payLateFromSavings(address _userAddress) internal atStage(Stages.Save){  //savings are complete at the time this function runs
@@ -316,6 +290,7 @@ contract SavingGroups is Modifiers{
         users[_userAddress].availableCashIn = cashIn;
         users[_userAddress].owedTotalCashIn = 0;
         } 
+
 
     //Cuánto le falta por ahorrar total
     function futurePayments() public view returns (uint256) {
@@ -335,14 +310,16 @@ contract SavingGroups is Modifiers{
         return expectedObligation;
     }
 
-    function getRealTurn() public view atStage(Stages.Save) returns (uint8){
+    function getRealTurn() public view atStage(Stages.Save) returns (uint8){ 
         uint8 realTurn = uint8((block.timestamp - startTime) / payTime)+1;
         return (realTurn);
     }
 
     function endRound() public atStage(Stages.Save) {
-        require(getRealTurn() > groupSize);
-        completeSavingsAndAdvanceTurn(); 
+        require(getRealTurn() > groupSize, "No ha terminado la ronda");
+        for (uint8 turno = turn; turno < groupSize+1; turno++) {
+            completeSavingsAndAdvanceTurn(turno); 
+        }
         
         uint256 sumAvailableCashIn = 0;
         for (uint8 i = 0; i < groupSize; i++) {
@@ -354,8 +331,7 @@ contract SavingGroups is Modifiers{
         
         for (uint8 i = 0; i < groupSize; i++) {
             address userAddr = addressOrderList[i];
-            uint256 realCashInProp = users[userAddr].availableCashIn/sumAvailableCashIn; 
-            uint256 amountTemp = users[userAddr].availableSavings + (realCashInProp * totalCashIn); 
+            uint256 amountTemp = users[userAddr].availableSavings + ((users[userAddr].availableCashIn * totalCashIn)/sumAvailableCashIn); 
             users[userAddr].availableSavings = 0;
             users[userAddr].availableCashIn = 0;
             users[userAddr].userAddr.transfer(amountTemp);
@@ -368,11 +344,6 @@ contract SavingGroups is Modifiers{
     } 
     
     //Getters
-    function getUserTurn(uint8 _userTurn) public view returns (uint8){
-        address userAddr = addressOrderList[_userTurn-1];
-        return(users[userAddr].userTurn);
-    }
-    
     function getUserAvailableCashIn(uint8 _userTurn) public view returns (uint256){
         address userAddr = addressOrderList[_userTurn-1];
         return(users[userAddr].availableCashIn);
@@ -406,9 +377,5 @@ contract SavingGroups is Modifiers{
     function getUserIsActive(uint8 _userTurn) public view returns (bool){
         address userAddr = addressOrderList[_userTurn-1];
         return(users[userAddr].isActive);
-    }
-
+    }    
 }
-
-
-
