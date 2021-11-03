@@ -78,7 +78,7 @@ contract SavingGroups is Modifiers {
             _payTime > 0,
             "El tiempo para pagar no puede ser menor a un dia"
         );
-        payTime = 86400 * _payTime;
+        payTime = _payTime;//86400 * _payTime;
         feeCost = (saveAmount / 10000) * 500; // calculate 5% fee
     }
 
@@ -89,7 +89,7 @@ contract SavingGroups is Modifiers {
 
     function registerUser(uint8 _userTurn)
         external
-        payable
+        //payable
         // isPayAmountCorrect(msg.value, cashIn, feeCost)
         atStage(Stages.Setup)
     {
@@ -103,11 +103,12 @@ contract SavingGroups is Modifiers {
             "Este lugar ya esta ocupado"
         );
         usersCounter++;
-        // users[msg.sender] = User(msg.sender, _userTurn, cashIn, 0, 0, 0, 0, 0, true); //create user
+        users[msg.sender] = User(msg.sender, _userTurn, cashIn, 0, 0, 0, 0, 0, true); //create user
         cUSD.transferFrom(msg.sender, address(this), cashIn);
         totalCashIn = totalCashIn + cashIn;
-        uint256 totalFee = msg.value - cashIn;
-        cUSD.transferFrom(msg.sender, devAddress, totalFee);
+        //uint256 totalFee = cashIn - cashIn;
+        //cUSD.transferFrom(msg.sender, devAddress, totalFee);
+        cUSD.transferFrom(msg.sender, devAddress, feeCost);
         addressOrderList[_userTurn - 1] = msg.sender; //store user
     }
 
