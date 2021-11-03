@@ -114,7 +114,7 @@ contract SavingGroups is Modifiers {
 
     function removeUser(uint256 _userTurn)
         external
-        payable
+        //payable
         onlyAdmin(admin)
         atStage(Stages.Setup)
     {
@@ -129,8 +129,7 @@ contract SavingGroups is Modifiers {
             users[removeAddress].availableCashIn = 0;
             totalCashIn = totalCashIn - availableCashInTemp;
             // users[removeAddress].userAddr.transfer(availableCashInTemp);
-            cUSD.transferFrom(
-                address(this),
+            cUSD.transfer(
                 users[removeAddress].userAddr,
                 availableCashInTemp
             );
@@ -148,26 +147,27 @@ contract SavingGroups is Modifiers {
 
     //Permite adelantar pagos o hacer abonos chiquitos
     //Primero se verifica si hay pagos pendientes al día y se abonan, si sobra se verifica si se debe algo al CashIn y se abona
-    function addPayment()
+    function addPayment(uint256 _amount)
         external
-        payable
+        //payable
         isRegisteredUser(users[msg.sender].isActive)
         atStage(Stages.Save)
     {
         //users make the payment for the cycle
         require(
-            msg.value <= futurePayments(),
+            _amount <= futurePayments(),
             "You are paying more than the total saving amount"
         );
 
         //First transaction that will complete saving of currentTurn and will trigger next turn
         uint8 realTurn = getRealTurn();
+        cUSD.transferFrom(msg.sender, address(this), _amount);
         if (turn < realTurn) {
             completeSavingsAndAdvanceTurn();
         }
 
         address userInTurn = addressOrderList[turn - 1];
-        uint256 deposit = msg.value;
+        uint256 deposit = _amount;
         users[msg.sender].unassignedPayments += deposit;
 
         //If userInTurn = msg.sender : se queda en unassigned
@@ -254,7 +254,7 @@ contract SavingGroups is Modifiers {
 
     function withdrawTurn()
         external
-        payable
+        //payable
         isRegisteredUser(users[msg.sender].isActive)
         atStage(Stages.Save)
     {
@@ -275,7 +275,11 @@ contract SavingGroups is Modifiers {
 
         uint256 savedAmountTemp = users[msg.sender].availableSavings;
         users[msg.sender].availableSavings = 0;
-        users[msg.sender].userAddr.transfer(savedAmountTemp);
+        //users[msg.sender].userAddr.transfer(savedAmountTemp);
+         cUSD.transfer(
+                users[msg.sender].userAddr,
+                savedAmountTemp
+            );
         savedAmountTemp = 0;
     }
 
