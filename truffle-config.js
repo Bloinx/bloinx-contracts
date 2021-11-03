@@ -1,6 +1,15 @@
 const HDWalletProvider = require('@truffle/hdwallet-provider');
 require('dotenv').config()
 const path = require("path");
+const Web3 = require('web3');
+const ContractKit = require('@celo/contractkit');
+const web3 = new Web3('https://alfajores-forno.celo-testnet.org');
+const kit = ContractKit.newKitFromWeb3(web3);
+
+async function awaitCeloWrapper() {
+  kit.connection.addAccount(process.env.CELO_PRIVATE_KEY)
+}
+awaitCeloWrapper();
 
 module.exports = {
   // See <http://truffleframework.com/docs/advanced/configuration>
@@ -29,6 +38,10 @@ module.exports = {
       gas: 3000000,
       gasPrice: 225000000000
     },
+    alfajores: {
+      provider: kit.connection.web3.currentProvider,
+      network_id: 44787
+    }
   },
   mocha: {
 
