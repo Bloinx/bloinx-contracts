@@ -2,6 +2,7 @@
 pragma solidity ^0.7.6;
 pragma experimental ABIEncoderV2;
 
+import "https://github.com/OpenZeppelin/openzeppelin-contracts/blob/release-v3.4-solc-0.7/contracts/token/ERC20/IERC20.sol";
 import "./Modifiers.sol";
 
 contract SavingGroups is Modifiers{
@@ -46,6 +47,7 @@ contract SavingGroups is Modifiers{
     uint256 public payTime = 0;
     uint256 public feeCost = 0;
     address payable public constant devAddress = 0x84052CEc1d08cF2eB93ffBaB096b88b455Bb9EEE;
+    IERC20 public cUSD; // 0x874069fa1eb16d44d622f2e0ca25eea172369bc1
     
     // BloinxEvents
     event RegisterUser(address indexed user, uint256 indexed turn);
@@ -58,7 +60,10 @@ contract SavingGroups is Modifiers{
         uint256 _saveAmount,
         uint256 _groupSize,
         address payable _admin,
-        uint256 _payTime) public {
+        uint256 _payTime,
+        IERC20 _token
+    ) public {
+        cUSD = _token;
         require(_admin != address(0), "La direccion del administrador no puede ser cero");
         require(_groupSize > 1 && _groupSize <= 10, "El tamanio del grupo debe ser mayor a uno y menor o igual a 10");
         admin = _admin;
@@ -68,7 +73,7 @@ contract SavingGroups is Modifiers{
         stage = Stages.Setup;
         addressOrderList = new address[](_groupSize);
         require(_payTime > 0, "El tiempo para pagar no puede ser menor a un dia");
-        payTime = 86400 * _payTime;
+        payTime = _payTime;//86400 * _payTime;
         feeCost = (saveAmount / 10000) * 500; // calculate 5% fee
     }
 
@@ -79,24 +84,21 @@ contract SavingGroups is Modifiers{
 
     function registerUser(uint8 _userTurn)
         external
-        payable
-        isPayAmountCorrect(msg.value, cashIn, feeCost)
         atStage(Stages.Setup) {
         require(!users[msg.sender].isActive,"Ya estas registrado en esta ronda");    
         require(usersCounter < groupSize, "El grupo esta completo"); //the saving circle is full
         require(addressOrderList[_userTurn-1]==address(0), "Este lugar ya esta ocupado" );
         usersCounter++;
         users[msg.sender] = User(msg.sender, _userTurn, cashIn, 0, 0, 0, 0, 0, true); //create user
+        cUSD.transferFrom(msg.sender, address(this), cashIn);
         totalCashIn += cashIn;
-        uint256 totalFee = msg.value - cashIn;
-        devAddress.transfer(totalFee);
+        cUSD.transferFrom(msg.sender, devAddress, feeCost);
         addressOrderList[_userTurn-1]=msg.sender; //store user
         emit RegisterUser(msg.sender, _userTurn);
     }
 
     function removeUser(uint256 _userTurn)
         external
-        payable
         onlyAdmin(admin)
         atStage(Stages.Setup) {
         require(addressOrderList[_userTurn-1]!=address(0), "Este turno esta vacio");
@@ -106,12 +108,14 @@ contract SavingGroups is Modifiers{
           uint256 availableCashInTemp = users[removeAddress].availableCashIn;
           users[removeAddress].availableCashIn = 0;
           totalCashIn = totalCashIn - availableCashInTemp;
-          users[removeAddress].userAddr.transfer(availableCashInTemp);
+          cUSD.transfer(
+                users[removeAddress].userAddr,
+                availableCashInTemp
+            );
         }
       addressOrderList[_userTurn-1]=address(0); //set address in turn to 0x00..
       usersCounter--;
       users[removeAddress].isActive = false;  // ¿tendría que poner turno en 0?
-     
     }
 
     function startRound()
@@ -125,22 +129,22 @@ contract SavingGroups is Modifiers{
 
     //Permite adelantar pagos o hacer abonos chiquitos
     //Primero se verifica si hay pagos pendientes al día y se abonan, si sobra se verifica si se debe algo al CashIn y se abona
-    function addPayment() 
+    function addPayment(uint256 _payAmount) 
         external
-        payable
         isRegisteredUser(users[msg.sender].isActive)
         atStage(Stages.Save) {
         //users make the payment for the cycle
-        require(msg.value <= futurePayments() && msg.value>0 , "Pago incorrecto");
+        require(_payAmount <= futurePayments() && _payAmount > 0 , "Pago incorrecto");
         
         //First transaction that will complete saving of currentTurn and will trigger next turn 
         uint8 realTurn = getRealTurn();
+        cUSD.transferFrom(msg.sender, address(this), _payAmount);
         if (turn < realTurn){
             completeSavingsAndAdvanceTurn(turn); 
         }
         
         address userInTurn = addressOrderList[turn-1];
-        uint256 deposit = msg.value;
+        uint256 deposit = _payAmount;
         users[msg.sender].unassignedPayments+= deposit;   
         
         uint256 obligation = obligationAtTime(msg.sender);
@@ -200,7 +204,6 @@ contract SavingGroups is Modifiers{
 
     function withdrawTurn()   
         external
-        //payable
         isRegisteredUser(users[msg.sender].isActive)
         atStage(Stages.Save){  
         uint8 senderTurn = users[msg.sender].userTurn;
@@ -221,8 +224,10 @@ contract SavingGroups is Modifiers{
         uint256 savedAmountTemp = 0;
         savedAmountTemp = users[msg.sender].availableSavings;
         users[msg.sender].availableSavings = 0;
-        users[msg.sender].userAddr.transfer(savedAmountTemp);
-        users[msg.sender].availableSavings = 0;
+        cUSD.transfer(
+            users[msg.sender].userAddr,
+            savedAmountTemp
+        );
         savedAmountTemp=0;    
     }
 
@@ -335,7 +340,10 @@ contract SavingGroups is Modifiers{
             uint256 amountTemp = users[userAddr].availableSavings + ((users[userAddr].availableCashIn * totalCashIn)/sumAvailableCashIn); 
             users[userAddr].availableSavings = 0;
             users[userAddr].availableCashIn = 0;
-            users[userAddr].userAddr.transfer(amountTemp);
+            cUSD.transfer(
+                users[userAddr].userAddr,
+                amountTemp
+            );
             users[userAddr].isActive = false;
             amountTemp=0;            
         }
