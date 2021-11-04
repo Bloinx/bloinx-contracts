@@ -88,7 +88,7 @@ contract SavingGroups is Modifiers{
         require(addressOrderList[_userTurn-1]==address(0), "Este lugar ya esta ocupado" );
         usersCounter++;
         users[msg.sender] = User(msg.sender, _userTurn, cashIn, 0, 0, 0, 0, 0, true); //create user
-        totalCashIn = totalCashIn + msg.value;
+        totalCashIn += cashIn;
         uint256 totalFee = msg.value - cashIn;
         devAddress.transfer(totalFee);
         addressOrderList[_userTurn-1]=msg.sender; //store user
