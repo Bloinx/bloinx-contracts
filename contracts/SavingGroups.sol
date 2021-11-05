@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.7.4;
+pragma solidity ^0.7.6;
 pragma experimental ABIEncoderV2;
 
 import "./Modifiers.sol";
@@ -19,7 +19,6 @@ contract SavingGroups is Modifiers{
         uint256 availableCashIn; //amount available in CashIn
         uint256 availableSavings;//Amount Available to withdraw
         uint256 amountPaid; //Amount paid by the user
-        //uint256 assingnedPayments; //posiblemente se quita.
         uint256 unassignedPayments;
         uint8 latePayments; //late Payments incurred by the user
         uint256 owedTotalCashIn; // amount taken in credit from others cashIn
@@ -44,7 +43,7 @@ contract SavingGroups is Modifiers{
 
     //Time constants in seconds
     // Weekly by Default
-    uint256 public payTime = 86400 * 7;
+    uint256 public payTime = 0;
     uint256 public feeCost = 0;
     address payable public constant devAddress = 0x84052CEc1d08cF2eB93ffBaB096b88b455Bb9EEE;
     
@@ -131,8 +130,8 @@ contract SavingGroups is Modifiers{
         payable
         isRegisteredUser(users[msg.sender].isActive)
         atStage(Stages.Save) {
-        //users make the payment for the cycle     
-        require(msg.value <= futurePayments(), "You are paying more than the total saving amount");
+        //users make the payment for the cycle
+        require(msg.value <= futurePayments() && msg.value>0 , "Pago incorrecto");
         
         //First transaction that will complete saving of currentTurn and will trigger next turn 
         uint8 realTurn = getRealTurn();
@@ -164,7 +163,6 @@ contract SavingGroups is Modifiers{
             //Si no he cubierto todos mis pagos hasta el día se asignan al usuario en turno.
                 users[msg.sender].unassignedPayments = users[msg.sender].unassignedPayments - paymentToTurn;
                 users[userInTurn].availableSavings = users[userInTurn].availableSavings + paymentToTurn;
-                //users[msg.sender].assingnedPayments = users[msg.sender].assingnedPayments + paymentToTurn;
                 users[msg.sender].amountPaid = users[msg.sender].amountPaid + paymentToTurn;
 
             }
@@ -197,13 +195,12 @@ contract SavingGroups is Modifiers{
             users[msg.sender].unassignedPayments = users[msg.sender].unassignedPayments - paymentCashInTemp;
             totalCashIn = totalCashIn + paymentCashInTemp;
             users[msg.sender].availableCashIn = users[msg.sender].availableCashIn + paymentCashInTemp;
-            //users[msg.sender].assingnedPayments = users[msg.sender].assingnedPayments + paymentCashInTemp;    
         } 
     }
 
     function withdrawTurn()   
         external
-        payable
+        //payable
         isRegisteredUser(users[msg.sender].isActive)
         atStage(Stages.Save){  
         uint8 senderTurn = users[msg.sender].userTurn;
@@ -221,9 +218,11 @@ contract SavingGroups is Modifiers{
             payLateFromSavings(msg.sender);
         }
        
-        uint256 savedAmountTemp = users[msg.sender].availableSavings;
+        uint256 savedAmountTemp = 0;
+        savedAmountTemp = users[msg.sender].availableSavings;
         users[msg.sender].availableSavings = 0;
         users[msg.sender].userAddr.transfer(savedAmountTemp);
+        users[msg.sender].availableSavings = 0;
         savedAmountTemp=0;    
     }
 
@@ -283,10 +282,10 @@ contract SavingGroups is Modifiers{
         turn++;
     }
 
-    function payLateFromSavings(address _userAddress) internal atStage(Stages.Save){  //savings are complete at the time this function runs
+    function payLateFromSavings(address _userAddress) internal atStage(Stages.Save){  
         uint256 debtOwnCashIn = cashIn - users[_userAddress].availableCashIn;
-        users[_userAddress].availableSavings = users[_userAddress].availableSavings-users[_userAddress].owedTotalCashIn - debtOwnCashIn;
-        totalCashIn = totalCashIn + users[_userAddress].owedTotalCashIn + debtOwnCashIn;
+        users[_userAddress].availableSavings -= users[_userAddress].owedTotalCashIn;
+        totalCashIn += users[_userAddress].owedTotalCashIn;
         users[_userAddress].availableCashIn = cashIn;
         users[_userAddress].owedTotalCashIn = 0;
         } 
@@ -315,7 +314,7 @@ contract SavingGroups is Modifiers{
         return (realTurn);
     }
 
-    function endRound() public atStage(Stages.Save) {
+    function endRound() public payable atStage(Stages.Save) {
         require(getRealTurn() > groupSize, "No ha terminado la ronda");
         for (uint8 turno = turn; turno < groupSize+1; turno++) {
             completeSavingsAndAdvanceTurn(turno); 
@@ -325,7 +324,9 @@ contract SavingGroups is Modifiers{
         for (uint8 i = 0; i < groupSize; i++) {
             address userAddr = addressOrderList[i];
             sumAvailableCashIn += users[userAddr].availableCashIn;
-            payLateFromSavings(userAddr);
+            if(users[userAddr].availableSavings >= users[userAddr].owedTotalCashIn){
+               payLateFromSavings(userAddr); 
+            }
             
         }
         
