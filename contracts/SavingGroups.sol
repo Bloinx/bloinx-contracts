@@ -15,7 +15,7 @@ contract SavingGroups is Modifiers{
 
     struct User {
         //Information from each user
-        address payable userAddr;
+        address userAddr;
         uint8 userTurn;
         uint256 availableCashIn; //amount available in CashIn
         uint256 availableSavings;//Amount Available to withdraw
@@ -27,7 +27,7 @@ contract SavingGroups is Modifiers{
     }
 
     mapping(address => User) public users;
-    address payable public admin; //The user that deploy the contract is the administrator
+    address public admin; //The user that deploy the contract is the administrator
 
     //Constructor deployment variables
     uint256 public cashIn; //amount to be payed as commitment at the begining of the saving circle
@@ -46,7 +46,7 @@ contract SavingGroups is Modifiers{
     // Weekly by Default
     uint256 public payTime = 0;
     uint256 public feeCost = 0;
-    address payable public constant devAddress = 0x84052CEc1d08cF2eB93ffBaB096b88b455Bb9EEE;
+    address public constant devAddress = 0x84052CEc1d08cF2eB93ffBaB096b88b455Bb9EEE;
     IERC20 public cUSD; // 0x874069fa1eb16d44d622f2e0ca25eea172369bc1
     
     // BloinxEvents
@@ -59,7 +59,7 @@ contract SavingGroups is Modifiers{
         uint256 _cashIn,
         uint256 _saveAmount,
         uint256 _groupSize,
-        address payable _admin,
+        address _admin,
         uint256 _payTime,
         IERC20 _token
     ) public {
@@ -73,7 +73,7 @@ contract SavingGroups is Modifiers{
         stage = Stages.Setup;
         addressOrderList = new address[](_groupSize);
         require(_payTime > 0, "El tiempo para pagar no puede ser menor a un dia");
-        payTime = _payTime;//86400 * _payTime;
+        payTime = 86400 * 2; // _payTime;
         feeCost = (saveAmount / 10000) * 500; // calculate 5% fee
     }
 
@@ -319,7 +319,7 @@ contract SavingGroups is Modifiers{
         return (realTurn);
     }
 
-    function endRound() public payable atStage(Stages.Save) {
+    function endRound() public atStage(Stages.Save) {
         require(getRealTurn() > groupSize, "No ha terminado la ronda");
         for (uint8 turno = turn; turno < groupSize+1; turno++) {
             completeSavingsAndAdvanceTurn(turno); 
