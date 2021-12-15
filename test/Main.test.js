@@ -9,7 +9,7 @@ contract("Main", async accounts => {
 
     it("should create a new round correctly", async () => {
         const instance = await Main.deployed();
-        // uint _warranty, uint256 _saving, uint256 _groupSize, uint256 _payTime, uint256 _withdrawTime
+        // uint _warranty, uint256 _saving, uint256 _groupSize, uint256 _payTime, IERC20 _token
         const result = await instance.createRound(1, 1, 4, 160, 160);
         
         expect(result).to.have.a.property('receipt');
