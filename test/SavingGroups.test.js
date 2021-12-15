@@ -16,7 +16,7 @@ contract("SavingGroups", async (accounts) => {
 
   beforeEach(async () => {
     // uint _warranty, uint256 _saving, uint256 _groupSize, address admin, uint256 _payTime, ERC20 _token
-    savingGroups = await SavingGroups.new(1, 1, 3, admin, 180, _token);
+    savingGroups = await SavingGroups.new(1, 1, 3, admin, 180, "0x874069fa1eb16d44d622f2e0ca25eea172369bc1");
   });
 
   describe("Register User", () => {
