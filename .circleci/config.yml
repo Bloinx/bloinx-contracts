@@ -1,0 +1,29 @@
+---
+# https://circleci.com/docs/2.0/configuration-reference
+version: 2.1
+
+# Check out these pre-built Orbs to make building and testing your project easier:
+#   - https://circleci.com/developer/orbs/orb/circleci/node
+#   - https://circleci.com/developer/orbs/orb/coveralls/coveralls
+orbs:
+  node: circleci/node@5.0.0
+  # coveralls: coveralls/coveralls@1.0.6
+
+workflows:
+  main:
+    jobs:
+      - npm-test
+
+jobs:
+  npm-test:
+    docker:
+      - image: cimg/base:stable
+    steps:
+      - node/install:
+          node-version: "12.22"
+      - checkout
+      - node/install-packages
+      - run: npm test
+      - run: npx codechecks
+      - run: npx truffle run coverage
+      - run: cat coverage/lcov.info | npx coveralls
