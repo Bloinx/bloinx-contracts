@@ -51,10 +51,14 @@ contract SavingGroups is Modifiers {
     IERC20 public cUSD; // 0x874069fa1eb16d44d622f2e0ca25eea172369bc1
     
     // BloinxEvents
-    event RegisterUser(address indexed user, uint256 indexed turn);
-    event RemoveUser(address indexed user, uint256 indexed turn);
-    event PayTurn(address indexed user);
-    event PayLateTurn(address indexed user, uint256 indexed turn);
+    event RegisterUser(address indexed user, uint8 indexed turn);
+    event PayCashIn(address indexed user, bool indexed success);
+    event PayFee(address indexed user, bool indexed success);
+    event RemoveUser(address indexed removedBy, address indexed user, uint8 indexed turn, uint256 indexed cashIn, bool indexed success);
+    event PayTurn(address indexed user, bool indexed success);
+    event PayLateTurn(address indexed user, uint8 indexed turn);
+    event WithdrawFunds(address indexed user, uint256 indexed amount, bool indexed success);
+    event EndRound(address indexed roundAddress, uint256 indexed startAt, uint256 indexed endAt);
 
     constructor(
         uint256 _cashIn,
@@ -95,9 +99,10 @@ contract SavingGroups is Modifiers {
         );
         usersCounter++;
         users[msg.sender] = User(msg.sender, _userTurn, cashIn, 0, 0, 0, 0, 0, true); //create user
-        cUSD.transferFrom(msg.sender, address(this), cashIn);
+        (bool registerSuccess) = transferFrom(address(this), cashIn);
+        emit PayCashIn(msg.sender, registerSuccess);
+        (bool payFeeSuccess) = transferFrom(devAddress, feeCost);
         totalCashIn += cashIn;
-        cUSD.transferFrom(msg.sender, devAddress, feeCost);
         addressOrderList[_userTurn-1]=msg.sender; //store user
         emit RegisterUser(msg.sender, _userTurn);
     }
@@ -113,14 +118,12 @@ contract SavingGroups is Modifiers {
           uint256 availableCashInTemp = users[removeAddress].availableCashIn;
           users[removeAddress].availableCashIn = 0;
           totalCashIn = totalCashIn - availableCashInTemp;
-          cUSD.transfer(
-                users[removeAddress].userAddr,
-                availableCashInTemp
-            );
+          (bool success) = tranferTo(users[removeAddress].userAddr, availableCashInTemp);
         }
-      addressOrderList[_userTurn-1]=address(0); //set address in turn to 0x00..
-      usersCounter--;
+      addressOrderList[_userTurn-1]= address(0); //set address in turn to 0x00..
+      usersCounter --;
       users[removeAddress].isActive = false;  // ¿tendría que poner turno en 0?
+      emit RemoveUser(msg.sender, removeAddress, _userTurn, availableCashInTemp, success);
     }
 
     function startRound() external onlyAdmin(admin) atStage(Stages.Setup) {
@@ -140,7 +143,8 @@ contract SavingGroups is Modifiers {
         
         //First transaction that will complete saving of currentTurn and will trigger next turn 
         uint8 realTurn = getRealTurn();
-        cUSD.transferFrom(msg.sender, address(this), _payAmount);
+        (bool success) = transferFrom(address(this), _payAmount);
+        emit PayTurn(msg.sender, success);
         if (turn < realTurn){
             completeSavingsAndAdvanceTurn(turn); 
         }
@@ -237,13 +241,20 @@ contract SavingGroups is Modifiers {
         uint256 savedAmountTemp = 0;
         savedAmountTemp = users[msg.sender].availableSavings;
         users[msg.sender].availableSavings = 0;
-        cUSD.transfer(
-            users[msg.sender].userAddr,
-            savedAmountTemp
-        );
+        (bool success) = transferTo(users[msg.sender].userAddr, savedAmountTemp);
+        emit WithdrawFunds(users[msg.sender].userAddr, savedAmountTemp, success);
         savedAmountTemp=0;    
     }
 
+    function transferFrom(address _to, uint256 _payAmount) internal returns (bool) {
+      bool success = cUSD.transferFrom(msg.sender, _to, _payAmount);
+      return success;
+    }
+
+    function transferTo(address _to, uint256 _amount) internal returns (bool) {
+      bool success = cUSD.transfer(_to, _amount);
+      return success;
+    }
     //Esta funcion se verifica que daba correr cada que se reliza un movimiento por parte de un usuario, 
     //solo correrá si es la primera vez que se corre en un turno, ya sea acción de retiro o pago.
     function completeSavingsAndAdvanceTurn(uint8 turno) private atStage(Stages.Save) {
@@ -315,35 +326,7 @@ contract SavingGroups is Modifiers {
         totalCashIn += users[_userAddress].owedTotalCashIn;
         users[_userAddress].availableCashIn = cashIn;
         users[_userAddress].owedTotalCashIn = 0;
-    }
-
-
-    //Cuánto le falta por ahorrar total
-    function futurePayments() public view returns (uint256) {
-        uint256 totalSaving = (saveAmount*(groupSize-1));
-        uint256 futurePayment = totalSaving - users[msg.sender].assignedPayments - users[msg.sender].unassignedPayments + users[msg.sender].owedTotalCashIn ;
-        return futurePayment;
-    }
-
-    //Returns the total payment the user should have paid at the moment
-    function obligationAtTime(address userAddress)
-        public
-        view
-        returns (uint256)
-    {
-        uint256 expectedObligation;
-        if (users[userAddress].userTurn <= turn) {
-            expectedObligation = saveAmount * (turn - 1);
-        } else {
-            expectedObligation = saveAmount * (turn);
-        }
-        return expectedObligation;
-    }
-
-    function getRealTurn() public view atStage(Stages.Save) returns (uint8){ 
-        uint8 realTurn = uint8((block.timestamp - startTime) / payTime)+1;
-        return (realTurn);
-    }
+    } 
 
     function endRound() public atStage(Stages.Save) {
         require(getRealTurn() > groupSize, "No ha terminado la ronda");
@@ -366,18 +349,40 @@ contract SavingGroups is Modifiers {
             uint256 amountTemp = users[userAddr].availableSavings + ((users[userAddr].availableCashIn * totalCashIn)/sumAvailableCashIn); 
             users[userAddr].availableSavings = 0;
             users[userAddr].availableCashIn = 0;
-            cUSD.transfer(
-                users[userAddr].userAddr,
-                amountTemp
-            );
+            transferTo(users[userAddr].userAddr, amountTemp);
             users[userAddr].isActive = false;
             amountTemp = 0;
         }
+        
+        stage = Stages.Finished;        
+        emit EndRound(address(this), startTime, block.timestamp))
+    } 
+    
+    //Getters
 
-        stage = Stages.Finished;
+    //Cuánto le falta por ahorrar total
+    function futurePayments() public view returns (uint256) {
+        uint256 totalSaving = (saveAmount*(groupSize-1));
+        uint256 futurePayment = totalSaving - users[msg.sender].assignedPayments - users[msg.sender].unassignedPayments + users[msg.sender].owedTotalCashIn ;
+        return futurePayment;
     }
 
-    //Getters
+    //Returns the total payment the user should have paid at the moment
+    function obligationAtTime(address userAddress) public view returns (uint256) {
+        uint256 expectedObligation;
+        if (users[userAddress].userTurn <= turn){
+            expectedObligation =  saveAmount * (turn-1);
+        } else{
+            expectedObligation =  saveAmount * (turn);
+        }
+        return expectedObligation;
+    }
+
+    function getRealTurn() public view atStage(Stages.Save) returns (uint8){ 
+        uint8 realTurn = uint8((block.timestamp - startTime) / payTime)+1;
+        return (realTurn);
+    }
+
     function getUserAvailableCashIn(uint8 _userTurn) public view returns (uint256){
         address userAddr = addressOrderList[_userTurn-1];
         return(users[userAddr].availableCashIn);
