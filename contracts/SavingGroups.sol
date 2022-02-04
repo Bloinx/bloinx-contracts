@@ -54,7 +54,7 @@ contract SavingGroups is Modifiers {
     event RegisterUser(address indexed user, uint8 indexed turn);
     event PayCashIn(address indexed user, bool indexed success);
     event PayFee(address indexed user, bool indexed success);
-    event RemoveUser(address indexed removedBy, address indexed user, uint8 indexed turn, uint256 indexed cashIn, bool indexed success);
+    event RemoveUser(address indexed removedBy, address indexed user, uint8 indexed turn);
     event PayTurn(address indexed user, bool indexed success);
     event PayLateTurn(address indexed user, uint8 indexed turn);
     event WithdrawFunds(address indexed user, uint256 indexed amount, bool indexed success);
@@ -102,12 +102,13 @@ contract SavingGroups is Modifiers {
         (bool registerSuccess) = transferFrom(address(this), cashIn);
         emit PayCashIn(msg.sender, registerSuccess);
         (bool payFeeSuccess) = transferFrom(devAddress, feeCost);
+        emit PayFee(msg.sender, payFeeSuccess);
         totalCashIn += cashIn;
         addressOrderList[_userTurn-1]=msg.sender; //store user
         emit RegisterUser(msg.sender, _userTurn);
     }
 
-    function removeUser(uint256 _userTurn)
+    function removeUser(uint8 _userTurn)
         external
         atStage(Stages.Setup) {
         require(msg.sender == admin || msg.sender == addressOrderList[_userTurn-1]  , "No tienes autorizacion para eliminar a este usuario");
@@ -118,12 +119,12 @@ contract SavingGroups is Modifiers {
           uint256 availableCashInTemp = users[removeAddress].availableCashIn;
           users[removeAddress].availableCashIn = 0;
           totalCashIn = totalCashIn - availableCashInTemp;
-          (bool success) = tranferTo(users[removeAddress].userAddr, availableCashInTemp);
+          transferTo(users[removeAddress].userAddr, availableCashInTemp);
         }
       addressOrderList[_userTurn-1]= address(0); //set address in turn to 0x00..
       usersCounter --;
       users[removeAddress].isActive = false;  // ¿tendría que poner turno en 0?
-      emit RemoveUser(msg.sender, removeAddress, _userTurn, availableCashInTemp, success);
+      emit RemoveUser(msg.sender, removeAddress, _userTurn);
     }
 
     function startRound() external onlyAdmin(admin) atStage(Stages.Setup) {
@@ -170,7 +171,7 @@ contract SavingGroups is Modifiers {
         
         //PAYMENTS: first: current turn debt, then totalCashIn
 
-            if (userInTurn != msg.sender){
+            if (userInTurn != msg.sender) {
                 if (debtToTurn < deposit) { 
                     paymentToTurn = debtToTurn;
                 } else {
@@ -181,17 +182,6 @@ contract SavingGroups is Modifiers {
                 users[msg.sender].unassignedPayments -= paymentToTurn;
                 users[userInTurn].availableSavings += paymentToTurn;
                 users[msg.sender].assignedPayments +=  paymentToTurn;
-
-                //Si no he cubierto todos mis pagos hasta el día se asignan al usuario en turno.
-                users[msg.sender].unassignedPayments =
-                    users[msg.sender].unassignedPayments -
-                    paymentToTurn;
-                users[userInTurn].availableSavings =
-                    users[userInTurn].availableSavings +
-                    paymentToTurn;
-                users[msg.sender].amountPaid =
-                    users[msg.sender].amountPaid +
-                    paymentToTurn;
             }
         }
 
@@ -355,7 +345,7 @@ contract SavingGroups is Modifiers {
         }
         
         stage = Stages.Finished;        
-        emit EndRound(address(this), startTime, block.timestamp))
+        emit EndRound(address(this), startTime, block.timestamp);
     } 
     
     //Getters
