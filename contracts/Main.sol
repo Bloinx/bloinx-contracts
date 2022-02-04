@@ -8,21 +8,9 @@ import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 contract Main {
     event RoundCreated(SavingGroups childRound);
 
-    function createRound(
-        uint256 _warranty,
-        uint256 _saving,
-        uint256 _groupSize,
-        uint256 _payTime,
-        IERC20 _token
-    ) external payable returns (address) {
-        SavingGroups newRound = new SavingGroups(
-            _warranty,
-            _saving,
-            _groupSize,
-            msg.sender,
-            _payTime,
-            _token
-        );
+    function createRound(uint256 _warranty, uint256 _saving, uint256 _groupSize, uint256 _payTime, IERC20 _token) external payable returns(address) {
+
+        SavingGroups newRound = new SavingGroups(_warranty, _saving, _groupSize, msg.sender, _payTime, _token);
         emit RoundCreated(newRound);
         return address(newRound);
     }
