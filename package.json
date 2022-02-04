@@ -7,18 +7,27 @@
     "test": "test"
   },
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "bash ./scripts/run_tests.sh"
   },
   "keywords": [
     "bloinx",
     "savingGroups",
     "solidity"
   ],
-  "author": "ArturVargas",
-  "license": "ISC",
+  "author": "BX Smart Labs",
+  "license": "BSD 3-Clause License",
   "dependencies": {
+    "@openzeppelin/contracts": "^3.4.0",
     "@openzeppelin/test-helpers": "^0.5.13",
     "@truffle/hdwallet-provider": "^1.4.1",
-    "dotenv": "^10.0.0"
+    "dotenv": "^10.0.0",
+    "solhint": "^3.3.6"
+  },
+  "devDependencies": {
+    "@codechecks/client": "^0.1.12",
+    "coveralls": "^3.1.1",
+    "eth-gas-reporter": "^0.2.23",
+    "mocha-lcov-reporter": "^1.3.0",
+    "solidity-coverage": "^0.7.17"
   }
 }
