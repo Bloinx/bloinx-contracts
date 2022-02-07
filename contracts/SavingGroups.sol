@@ -25,6 +25,7 @@ contract SavingGroups is Modifiers {
         uint8 latePayments; //late Payments incurred by the user
         uint256 owedTotalCashIn; // amount taken in credit from others cashIn
         bool isActive; //defines if the user is participating in the current round
+        uint256 withdrewAmount; 
     }
 
     mapping(address => User) public users;
@@ -98,7 +99,7 @@ contract SavingGroups is Modifiers {
             "Este lugar ya esta ocupado"
         );
         usersCounter++;
-        users[msg.sender] = User(msg.sender, _userTurn, cashIn, 0, 0, 0, 0, 0, true); //create user
+        users[msg.sender] = User(msg.sender, _userTurn, cashIn, 0, 0, 0, 0, 0, true, 0); //create user
         (bool registerSuccess) = transferFrom(address(this), cashIn);
         emit PayCashIn(msg.sender, registerSuccess);
         (bool payFeeSuccess) = transferFrom(devAddress, feeCost);
@@ -216,7 +217,7 @@ contract SavingGroups is Modifiers {
         uint8 senderTurn = users[msg.sender].userTurn;
         uint8 realTurn = getRealTurn();
         require(realTurn > senderTurn, "Espera a llegar a tu turno"); //turn = turno actual de la rosca
-
+        require(users[msg.sender].withdrewAmount == 0 );
         //First transaction that will complete saving of currentTurn and will trigger next turn
         //Because this runs each user action, we are sure the user in turn has its availableSavings complete
         if (turn < realTurn){
@@ -233,6 +234,7 @@ contract SavingGroups is Modifiers {
         users[msg.sender].availableSavings = 0;
         (bool success) = transferTo(users[msg.sender].userAddr, savedAmountTemp);
         emit WithdrawFunds(users[msg.sender].userAddr, savedAmountTemp, success);
+        users[msg.sender].withdrewAmount += savedAmountTemp;
         savedAmountTemp=0;    
     }
 
