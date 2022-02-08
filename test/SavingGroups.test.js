@@ -3,11 +3,13 @@ const {
   time,
   expectEvent,
 } = require("@openzeppelin/test-helpers");
+const web3 = require("web3");
 const SavingGroups = artifacts.require("SavingGroups");
 const TestERC20 = artifacts.require("TestERC20");
 
 contract("SavingGroups", async (accounts) => {
   let tUSD;
+  let contract;
   let savingGroups;
   const [celoDeployer, admin, user1, user2, user3] = [
     accounts[0],
@@ -19,101 +21,94 @@ contract("SavingGroups", async (accounts) => {
 
   beforeEach(async () => {
     tUSD = await TestERC20.new({ from: celoDeployer });
-    tUSD.mint(celoDeployer, '1000000000000000000000');
-
-    await tUSD.transfer(admin, '6000000000000000000');
-    await tUSD.transfer(user1, '6000000000000000000');
-    await tUSD.transfer(user2, '6000000000000000000');
-    await tUSD.transfer(user3, '6000000000000000000');
+    await tUSD.mint(celoDeployer, web3.utils.toWei('1000', 'ether'));
+    await tUSD.transfer(admin, web3.utils.toWei('6', 'ether'));
+    await tUSD.transfer(user1, web3.utils.toWei('6', 'ether'));
+    await tUSD.transfer(user2, web3.utils.toWei('6', 'ether'));
+    await tUSD.transfer(user3, web3.utils.toWei('6', 'ether'));
     // uint _warranty, uint256 _saving, uint256 _groupSize, address admin, uint256 _payTime, ERC20 _token
     savingGroups = await SavingGroups.new(1, 1, 3, admin, 180, (tUSD.address).toString());
+
+    contract = savingGroups.address;
+    await tUSD.approve(contract, web3.utils.toWei('100', 'ether'), { from: admin });
+    await tUSD.approve(admin, web3.utils.toWei('6', 'ether'), { from: admin });
+    await tUSD.approve(contract, web3.utils.toWei('100', 'ether'), { from: user1 });
+    await tUSD.approve(user1, web3.utils.toWei('6', 'ether'), { from: user1 });
+    await tUSD.approve(contract, web3.utils.toWei('100', 'ether'), { from: user2 });
+    await tUSD.approve(user2, web3.utils.toWei('6', 'ether'), { from: user2 });
+    await tUSD.approve(contract, web3.utils.toWei('100', 'ether'), { from: user3 });
+    await tUSD.approve(user3, web3.utils.toWei('6', 'ether'), { from: user3 });
+
   });
 
   describe("Register User", () => {
     it("the users should be registered successfully", async () => {
-      await tUSD.approve(savingGroups.address, '10000000000000000000', { from: admin });
-      console.log(admin);
-      const balance = await web3.eth.getBalance(admin);
-      console.log("Balance: ", balance);
-      // await this.token.transfer(this.contract.address, amount, { from: owner });
-      const adminRegister = await tUSD.transferFrom(admin, savingGroups.address, '10000000000000000000', { from: admin });
-      console.log(tx)
-      // const adminRegister = await savingGroups.registerUser(1, {
-      //   from: admin,
-      //   value: 1 * 10 ** 18,
-      // });
-      // console.log("---->> ", adminRegister);
-      // const userOneRegister = await savingGroups.registerUser(2, {
-      //   from: user1,
-      //   value: 1 * 10 ** 18,
-      // });
-      // const userTwoRegister = await savingGroups.registerUser(3, {
-      //   from: user2,
-      //   value: 1 * 10 ** 18,
-      // });
-
+      const adminRegister = await savingGroups.registerUser(1, { from: admin });
+      
+      expectEvent(adminRegister, "PayCashIn");
+      expectEvent(adminRegister, "PayFee");
       expectEvent(adminRegister, "RegisterUser");
-      // expectEvent(userOneRegister, "RegisterUser");
-      // expectEvent(userTwoRegister, "RegisterUser");
     });
 
-    // it("should return an error when the user try to register in a occupied turn", async () => {
-    //   const errorMessage = "Este lugar ya esta ocupado";
-    //   const adminRegister = await savingGroups.registerUser(1, {
-    //     from: admin,
-    //     value: 1 * 10 ** 18,
-    //   });
-    //   const userOneRegister = await savingGroups.registerUser(2, {
-    //     from: user1,
-    //     value: 1 * 10 ** 18,
-    //   });
+    it("should return an error when the user try to register in a occupied turn", async () => {
+      const errorMessage = "Este lugar ya esta ocupado";
 
-    //   expectEvent(adminRegister, "RegisterUser");
-    //   expectEvent(userOneRegister, "RegisterUser");
-    //   await expectRevert(
-    //     savingGroups.registerUser(2, { from: user2, value: 1 * 10 ** 18 }),
-    //     errorMessage
-    //   );
-    // });
+      const adminRegister = await savingGroups.registerUser(1, { from: admin });
+      const userOneRegister = await savingGroups.registerUser(2, { from: user1 });
 
-    // it("should return an error if the user does not have sufficient founds", async () => {
-    //   const errorMessage = "Monto incorrecto";
-    //   const adminRegister = await savingGroups.registerUser(1, {
-    //     from: admin,
-    //     value: 1 * 10 ** 18,
-    //   });
+      expectEvent(adminRegister, "RegisterUser");
+      expectEvent(userOneRegister, "RegisterUser");
 
-    //   expectEvent(adminRegister, "RegisterUser");
-    //   await expectRevert(
-    //     savingGroups.registerUser(2, { from: user1, value: 1 }),
-    //     errorMessage
-    //   );
-    // });
+      await expectRevert(
+        savingGroups.registerUser(2, { from: user2 }),
+        errorMessage
+      );
+    });
 
-    // it("should return an error if the stage is different to Setup", async () => {
-    //   const errorMessage = "Stage incorrecto para ejecutar la funcion";
-    //   await savingGroups.registerUser(1, { from: admin, value: 1 * 10 ** 18 });
-    //   await savingGroups.registerUser(2, { from: user1, value: 1 * 10 ** 18 });
-    //   await savingGroups.registerUser(3, { from: user2, value: 1 * 10 ** 18 });
-    //   await savingGroups.startRound();
+    it("should return an error if the stage is different to Setup", async () => {
+      const errorMessage = "Stage incorrecto para ejecutar la funcion";
+     
+      await savingGroups.registerUser(1, { from: admin });
+      await savingGroups.registerUser(2, { from: user1 });
+      await savingGroups.registerUser(3, { from: user2 });
+      await savingGroups.startRound({ from: admin });
 
-    //   await expectRevert(
-    //     savingGroups.registerUser(4, { from: user3, value: 1 * 10 ** 18 }),
-    //     errorMessage
-    //   );
-    // });
+      await expectRevert(
+        savingGroups.registerUser(4, { from: user3 }),
+        errorMessage
+      );
+    });
 
-    // it("should return an error if the group is complete", async () => {
-    //   const errorMessage = "El grupo esta completo";
-    //   await savingGroups.registerUser(1, { from: admin, value: 1 * 10 ** 18 });
-    //   await savingGroups.registerUser(2, { from: user1, value: 1 * 10 ** 18 });
-    //   await savingGroups.registerUser(3, { from: user2, value: 1 * 10 ** 18 });
+    it("should return an error if the group is complete", async () => {
+      const errorMessage = "El grupo esta completo";
 
-    //   await expectRevert(
-    //     savingGroups.registerUser(4, { from: user3, value: 1 * 10 ** 18 }),
-    //     errorMessage
-    //   );
-    // });
+      await savingGroups.registerUser(1, { from: admin });
+      await savingGroups.registerUser(2, { from: user1 });
+      await savingGroups.registerUser(3, { from: user2 });
+
+      await expectRevert(
+        savingGroups.registerUser(4, { from: user3 }),
+        errorMessage
+      );
+    });
+
+    it("should return a total cashIn", async () => {
+      const initialCashInBalance = await savingGroups.totalCashIn();
+      expect(initialCashInBalance.toString()).equal('0');
+
+      const cashInBN = await savingGroups.cashIn();
+      const cashIn = web3.utils.fromWei(cashInBN, 'ether');
+      const groupSize = await savingGroups.groupSize();
+
+      await savingGroups.registerUser(1, { from: admin });
+      await savingGroups.registerUser(2, { from: user1 });
+      await savingGroups.registerUser(3, { from: user2 });
+
+      const cashInExpected = groupSize * cashIn;
+      const totalCashIn = await savingGroups.totalCashIn();
+      
+      expect(web3.utils.fromWei(totalCashIn, 'ether')).to.equal(cashInExpected.toString());
+    });
   });
 
   describe("Remove User", () => {

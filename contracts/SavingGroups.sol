@@ -88,7 +88,9 @@ contract SavingGroups is Modifiers {
         _;
     }
 
-    function registerUser(uint8 _userTurn) external atStage(Stages.Setup) {
+    function registerUser(uint8 _userTurn)
+    external atStage(Stages.Setup)
+    {
         require(
             !users[msg.sender].isActive,
             "Ya estas registrado en esta ronda"
@@ -112,8 +114,12 @@ contract SavingGroups is Modifiers {
     function removeUser(uint8 _userTurn)
         external
         atStage(Stages.Setup) {
-        require(msg.sender == admin || msg.sender == addressOrderList[_userTurn-1]  , "No tienes autorizacion para eliminar a este usuario");
-        require(addressOrderList[_userTurn-1]!=address(0), "Este turno esta vacio");
+        require(msg.sender == admin || msg.sender == addressOrderList[_userTurn-1],
+					"No tienes autorizacion para eliminar a este usuario"
+				);
+        require(addressOrderList[_userTurn-1]!=address(0),
+					"Este turno esta vacio"
+				);
         address removeAddress=addressOrderList[_userTurn-1];
         if(users[removeAddress].availableCashIn >0){
           //if user has cashIn available, send it back 
@@ -135,7 +141,10 @@ contract SavingGroups is Modifiers {
     }
 
     //Permite adelantar pagos o hacer abonos chiquitos
-    //Primero se verifica si hay pagos pendientes al día y se abonan, si sobra se verifica si se debe algo al CashIn y se abona
+    /*
+		Primero se verifica si hay pagos pendientes al día 
+		y se abonan, si sobra se verifica si se debe algo al CashIn y se abona
+		*/
     function addPayment(uint256 _payAmount) 
         external
         isRegisteredUser(users[msg.sender].isActive)
@@ -189,7 +198,8 @@ contract SavingGroups is Modifiers {
         //PAGO DEUDA DEL CASHIN TOTAL
         if (users[msg.sender].owedTotalCashIn > 0 && users[msg.sender].unassignedPayments > 0 ){
             uint256 paymentTotalCashIn;
-            if (users[msg.sender].owedTotalCashIn <= users[msg.sender].unassignedPayments){ //unnasigned excede o iguala la deuda del cashIn
+						//unnasigned excede o iguala la deuda del cashIn
+            if (users[msg.sender].owedTotalCashIn <= users[msg.sender].unassignedPayments) {
                 paymentTotalCashIn = users[msg.sender].owedTotalCashIn;
             } else {
                 paymentTotalCashIn = users[msg.sender].unassignedPayments;  //cubre parcialmente la deuda del cashIn
@@ -269,7 +279,8 @@ contract SavingGroups is Modifiers {
                     //Asignamos pagos pendientes
                     if (users[useraddress].unassignedPayments > 0) {
                         uint256 toAssign;
-                        if (debtUser < users[useraddress].unassignedPayments) { //se paga toda la deuda y sigue con saldo a favor
+												//se paga toda la deuda y sigue con saldo a favor
+                        if (debtUser < users[useraddress].unassignedPayments) {
                             toAssign = debtUser;
                         } else {
                             toAssign = users[useraddress].unassignedPayments;
@@ -354,59 +365,59 @@ contract SavingGroups is Modifiers {
 
     //Cuánto le falta por ahorrar total
     function futurePayments() public view returns (uint256) {
-        uint256 totalSaving = (saveAmount*(groupSize-1));
-        uint256 futurePayment = totalSaving - users[msg.sender].assignedPayments - users[msg.sender].unassignedPayments + users[msg.sender].owedTotalCashIn ;
-        return futurePayment;
+			uint256 totalSaving = (saveAmount*(groupSize-1));
+			uint256 futurePayment = totalSaving - users[msg.sender].assignedPayments - users[msg.sender].unassignedPayments + users[msg.sender].owedTotalCashIn;
+			return futurePayment;
     }
 
     //Returns the total payment the user should have paid at the moment
     function obligationAtTime(address userAddress) public view returns (uint256) {
-        uint256 expectedObligation;
-        if (users[userAddress].userTurn <= turn){
-            expectedObligation =  saveAmount * (turn-1);
-        } else{
-            expectedObligation =  saveAmount * (turn);
-        }
-        return expectedObligation;
+			uint256 expectedObligation;
+			if (users[userAddress].userTurn <= turn){
+					expectedObligation =  saveAmount * (turn-1);
+			} else{
+					expectedObligation =  saveAmount * (turn);
+			}
+			return expectedObligation;
     }
 
     function getRealTurn() public view atStage(Stages.Save) returns (uint8){ 
-        uint8 realTurn = uint8((block.timestamp - startTime) / payTime)+1;
-        return (realTurn);
+			uint8 realTurn = uint8((block.timestamp - startTime) / payTime)+1;
+			return (realTurn);
     }
 
     function getUserAvailableCashIn(uint8 _userTurn) public view returns (uint256){
-        address userAddr = addressOrderList[_userTurn-1];
-        return(users[userAddr].availableCashIn);
+			address userAddr = addressOrderList[_userTurn-1];
+			return(users[userAddr].availableCashIn);
     }
         
     function getUserAvailableSavings(uint8 _userTurn) public view returns (uint256){
-        address userAddr = addressOrderList[_userTurn-1];
-        return(users[userAddr].availableSavings);
+			address userAddr = addressOrderList[_userTurn-1];
+			return(users[userAddr].availableSavings);
     }
         
     function getUserAmountPaid(uint8 _userTurn) public view returns (uint256){
-        address userAddr = addressOrderList[_userTurn-1];
-        return(users[userAddr].assignedPayments);
+			address userAddr = addressOrderList[_userTurn-1];
+			return(users[userAddr].assignedPayments);
     }    
         
     function getUserUnassignedPayments(uint8 _userTurn) public view returns (uint256){
-        address userAddr = addressOrderList[_userTurn-1];
-        return(users[userAddr].unassignedPayments);
+			address userAddr = addressOrderList[_userTurn-1];
+			return(users[userAddr].unassignedPayments);
     }        
         
     function getUserLatePayments(uint8 _userTurn) public view returns (uint8){
-        address userAddr = addressOrderList[_userTurn-1];
-        return(users[userAddr].latePayments);
+			address userAddr = addressOrderList[_userTurn-1];
+			return(users[userAddr].latePayments);
     }    
     
     function getUserOwedTotalCashIn(uint8 _userTurn) public view returns (uint256){
-        address userAddr = addressOrderList[_userTurn-1];
-        return(users[userAddr].owedTotalCashIn);
+			address userAddr = addressOrderList[_userTurn-1];
+			return(users[userAddr].owedTotalCashIn);
     }    
     
     function getUserIsActive(uint8 _userTurn) public view returns (bool){
-        address userAddr = addressOrderList[_userTurn-1];
-        return(users[userAddr].isActive);
+			address userAddr = addressOrderList[_userTurn-1];
+			return(users[userAddr].isActive);
     }    
 }
