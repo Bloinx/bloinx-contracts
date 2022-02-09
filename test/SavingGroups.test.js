@@ -1,6 +1,7 @@
 const {
   expectRevert,
   time,
+  constants,
   expectEvent,
 } = require("@openzeppelin/test-helpers");
 const web3 = require("web3");
@@ -112,121 +113,136 @@ contract("SavingGroups", async (accounts) => {
   });
 
   describe("Remove User", () => {
-    // it("should remove user successfully", async () => {
-    //   await savingGroups.registerUser(1, { from: admin, value: 1 * 10 ** 18 });
-    //   await savingGroups.registerUser(2, { from: user1, value: 1 * 10 ** 18 });
-    //   await savingGroups.registerUser(3, { from: user2, value: 1 * 10 ** 18 });
+    it("should remove user successfully", async () => {
+      const turn = 3;
+      const ZERO_ADDRESS = constants.ZERO_ADDRESS;
 
-    //   const userRemoved = await savingGroups.removeUser(3, { from: admin });
-    //   expectEvent(userRemoved, "RemoveUser");
-    // });
+      await savingGroups.registerUser(1, { from: admin });
+      await savingGroups.registerUser(2, { from: user1 });
+      await savingGroups.registerUser(3, { from: user2 });
 
-    // it("should return an error if the turn to remove is empty", async () => {
-    //   const errorMessage = "Este turno esta vacio";
-    //   await savingGroups.registerUser(1, { from: admin, value: 1 * 10 ** 18 });
-    //   await savingGroups.registerUser(2, { from: user1, value: 1 * 10 ** 18 });
+      const userRemoved = await savingGroups.removeUser(turn, { from: admin });
+      expectEvent(userRemoved, "RemoveUser");
 
-    //   await expectRevert(
-    //     savingGroups.removeUser(3, { from: admin }),
-    //     errorMessage
-    //   );
-    // });
+      const addressInRemovedTurn = await savingGroups.addressOrderList(turn-1);
+      expect(addressInRemovedTurn).to.equal(ZERO_ADDRESS);
+    });
 
-    // it("should can register another user after removed", async () => {
-    //   await savingGroups.registerUser(1, { from: admin, value: 1 * 10 ** 18 });
-    //   await savingGroups.registerUser(2, { from: user1, value: 1 * 10 ** 18 });
-    //   await savingGroups.registerUser(3, { from: user2, value: 1 * 10 ** 18 });
+    it("should return an error if the turn to remove is empty", async () => {
+      const errorMessage = "Este turno esta vacio";
+      await savingGroups.registerUser(1, { from: admin });
+      await savingGroups.registerUser(2, { from: user1 });
 
-    //   const userRemoved = await savingGroups.removeUser(3, { from: admin });
-    //   expectEvent(userRemoved, "RemoveUser");
+      await expectRevert(
+        savingGroups.removeUser(3, { from: admin }),
+        errorMessage
+      );
+    });
 
-    //   const newRegister = await savingGroups.registerUser(3, {
-    //     from: user3,
-    //     value: 1 * 10 ** 18,
-    //   });
-    //   expectEvent(newRegister, "RegisterUser");
-    // });
+    it("should return an error if is not the admin calling the function", async () => {
+      const errorMessage = "No tienes autorizacion para eliminar a este usuario";
+      await savingGroups.registerUser(1, { from: admin });
+      await savingGroups.registerUser(2, { from: user1 });
+      await savingGroups.registerUser(3, { from: user2 });
 
-    // it("should return an error if is not the admin calling the function", async () => {
-    //   const errorMessage = "Solo el admin puede llamar la funcion";
-    //   await savingGroups.registerUser(1, { from: admin, value: 1 * 10 ** 18 });
-    //   await savingGroups.registerUser(2, { from: user1, value: 1 * 10 ** 18 });
-    //   await savingGroups.registerUser(3, { from: user2, value: 1 * 10 ** 18 });
+      await expectRevert(
+        savingGroups.removeUser(3, { from: user3 }),
+        errorMessage
+      );
+    });
 
-    //   await expectRevert(
-    //     savingGroups.removeUser(3, { from: user3 }),
-    //     errorMessage
-    //   );
-    // });
+    it("should return an error if the admin try to remove their wallet", async () => {
+      const errorMessage = "No puedes eliminar al administrador de la ronda";
+      await savingGroups.registerUser(1, { from: admin });
+      await savingGroups.registerUser(2, { from: user1 });
+      await savingGroups.registerUser(3, { from: user2 });
 
-    // it("should return an error if the stage is different to Setup", async () => {
-    //   const errorMessage = "Stage incorrecto para ejecutar la funcion";
-    //   await savingGroups.registerUser(1, { from: admin, value: 1 * 10 ** 18 });
-    //   await savingGroups.registerUser(2, { from: user1, value: 1 * 10 ** 18 });
-    //   await savingGroups.registerUser(3, { from: user2, value: 1 * 10 ** 18 });
-    //   await savingGroups.startRound();
+      await expectRevert(
+        savingGroups.removeUser(1, { from: admin }),
+        errorMessage
+      );
+    });
 
-    //   await expectRevert(
-    //     savingGroups.removeUser(3, { from: admin }),
-    //     errorMessage
-    //   );
-    // });
+    it("should can register another user after removed", async () => {
+      await savingGroups.registerUser(1, { from: admin });
+      await savingGroups.registerUser(2, { from: user1 });
+      
+      const userRemoved = await savingGroups.removeUser(2, { from: admin });
+      expectEvent(userRemoved, "RemoveUser");
+
+      const newRegister = await savingGroups.registerUser(2, {
+        from: user3,
+      });
+      expectEvent(newRegister, "RegisterUser");
+    });
+
+    it("should return an error if the stage is different to Setup", async () => {
+      const errorMessage = "Stage incorrecto para ejecutar la funcion";
+      await savingGroups.registerUser(1, { from: admin });
+      await savingGroups.registerUser(2, { from: user1 });
+      await savingGroups.registerUser(3, { from: user2 });
+      await savingGroups.startRound({ from: admin });
+
+      await expectRevert(
+        savingGroups.removeUser(3, { from: admin }),
+        errorMessage
+      );
+    });
   });
 
   describe("Start Round", () => {
-    // it("should star round successfully", async () => {
-    //   await savingGroups.registerUser(1, { from: admin, value: 1 * 10 ** 18 });
-    //   await savingGroups.registerUser(2, { from: user1, value: 1 * 10 ** 18 });
-    //   await savingGroups.registerUser(3, { from: user2, value: 1 * 10 ** 18 });
+    it("should star round successfully", async () => {
+      await savingGroups.registerUser(1, { from: admin });
+      await savingGroups.registerUser(2, { from: user1 });
+      await savingGroups.registerUser(3, { from: user2 });
 
-    //   const result = await savingGroups.startRound();
-    //   expect(result).to.have.a.property("receipt");
-    // });
+      const result = await savingGroups.startRound({ from: admin });
+      expect(result).to.have.a.property("receipt");
+    });
 
-    // it("should return an error if has a unassigned turns", async () => {
-    //   const errorMessage =
-    //     "Aun hay lugares sin asignar o alguien no ha pagado la garantia";
-    //   await savingGroups.registerUser(1, { from: admin, value: 1 * 10 ** 18 });
-    //   await savingGroups.registerUser(2, { from: user1, value: 1 * 10 ** 18 });
+    it("should return an error if has a unassigned turns", async () => {
+      const errorMessage =
+        "Aun hay lugares sin asignar";
+      await savingGroups.registerUser(1, { from: admin });
+      await savingGroups.registerUser(2, { from: user1 });
 
-    //   await expectRevert(savingGroups.startRound(), errorMessage);
-    // });
+      await expectRevert(savingGroups.startRound({ from: admin }), errorMessage);
+    });
 
-    // it("should return an error if is not the admin calling the function", async () => {
-    //   const errorMessage = "Solo el admin puede llamar la funcion";
-    //   await savingGroups.registerUser(1, { from: admin, value: 1 * 10 ** 18 });
-    //   await savingGroups.registerUser(2, { from: user1, value: 1 * 10 ** 18 });
-    //   await savingGroups.registerUser(3, { from: user2, value: 1 * 10 ** 18 });
+    it("should return an error if is not the admin calling the function", async () => {
+      const errorMessage = "Solo el admin puede llamar la funcion";
+      await savingGroups.registerUser(1, { from: admin });
+      await savingGroups.registerUser(2, { from: user1 });
+      await savingGroups.registerUser(3, { from: user2 });
 
-    //   await expectRevert(savingGroups.startRound({from: user3}), errorMessage);
-    // });
+      await expectRevert(savingGroups.startRound({from: user3}), errorMessage);
+    });
 
-    // it("should return an error if the stage is different to Setup", async () => {
-    //     const errorMessage = "Stage incorrecto para ejecutar la funcion";
-    //     await savingGroups.registerUser(1, { from: admin, value: 1 * 10 ** 18 });
-    //     await savingGroups.registerUser(2, { from: user1, value: 1 * 10 ** 18 });
-    //     await savingGroups.registerUser(3, { from: user2, value: 1 * 10 ** 18 });
-    //     await savingGroups.startRound();
+    it("should return an error if the stage is different to Setup", async () => {
+        const errorMessage = "Stage incorrecto para ejecutar la funcion";
+        await savingGroups.registerUser(1, { from: admin });
+        await savingGroups.registerUser(2, { from: user1 });
+        await savingGroups.registerUser(3, { from: user2 });
+        await savingGroups.startRound({ from: admin });
   
-    //     await expectRevert(savingGroups.startRound(), errorMessage);
-    // });
+        await expectRevert(savingGroups.startRound({ from: admin }), errorMessage);
+    });
   });
 
-  // describe('Pay Turn', () => {
-  //     it("should the users can deposit his pay", async () => {
-  //       await savingGroups.registerUser(1, { from: admin, value: 1 * 10 ** 17 });
-  //       await savingGroups.registerUser(2, { from: user1, value: 1 * 10 ** 17 });
-  //       await savingGroups.registerUser(3, { from: user2, value: 1 * 10 ** 17 });
-  //       await savingGroups.startRound();
+  describe("Add payment", () => {
+    beforeEach(async () => {
+      await savingGroups.registerUser(1, { from: admin });
+      await savingGroups.registerUser(2, { from: user1 });
+      await savingGroups.registerUser(3, { from: user2 });
+      await savingGroups.startRound({ from: admin });
+    });
 
-  //       const userOneDeposit = await savingGroups.payTurn({ from: user1, value: 1 * 10 ** 17 });
-  //       const userTwoDeposit = await savingGroups.payTurn({ from: user2, value: 1 * 10 ** 17 });
-  //       const totalSaveAmount = await savingGroups.totalSaveAmount();
-        
-  //       expectEvent(userOneDeposit, 'PayTurn');
-  //       expectEvent(userTwoDeposit, 'PayTurn');
-  //       expect(totalSaveAmount.toString()).to.equal((2 * 10 ** 17).toString());
-  //     });
+    it("should the users can deposit his pay", async () => {
+      const userOneDeposit = await savingGroups.addPayment(web3.utils.toWei('1', 'ether'), { from: user1 });
+     
+      expectEvent(userOneDeposit, 'PayTurn');
+      // expect(totalSaveAmount.toString()).to.equal((2 * 10 ** 17).toString());
+    });
 
   //     it("should if the user already pay his turn avoid depositing again", async () => {
   //       const errorMessage = "Ya ahorraste este turno"; 
@@ -279,6 +295,10 @@ contract("SavingGroups", async (accounts) => {
 
   //      await expectRevert(savingGroups.payTurn({ from: admin, value: 1 * 10 ** 17}), errorMessage);
   //     });
-  // })
+  })
+
+  describe("WithdrawFunds", () => {
+    
+  })
   
 });

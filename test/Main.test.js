@@ -35,7 +35,7 @@ contract("Main", async accounts => {
         )
     })
 
-    it("should return an error if the payTime size is lees than a day", async () => {
+    it("should return an error if the payTime duration is less than a day", async () => {
         const instance = await Main.deployed();
         const errorMessage = "El tiempo para pagar no puede ser menor a un dia";
 

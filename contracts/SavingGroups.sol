@@ -120,6 +120,9 @@ contract SavingGroups is Modifiers {
         require(addressOrderList[_userTurn-1]!=address(0),
 					"Este turno esta vacio"
 				);
+				require(admin != addressOrderList[_userTurn-1],
+					"No puedes eliminar al administrador de la ronda"
+				);
         address removeAddress=addressOrderList[_userTurn-1];
         if(users[removeAddress].availableCashIn >0){
           //if user has cashIn available, send it back 
