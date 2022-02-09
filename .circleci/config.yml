@@ -25,5 +25,5 @@ jobs:
       - node/install-packages
       - run: npm test
       - run: npx codechecks
-      - run: npx truffle run coverage
+      - run: npm run coverage
       - run: cat coverage/lcov.info | npx coveralls
