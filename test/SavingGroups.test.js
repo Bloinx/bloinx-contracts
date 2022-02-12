@@ -238,67 +238,54 @@ contract("SavingGroups", async (accounts) => {
     });
 
     it("should the users can deposit his pay", async () => {
+      const contractInitialBalance = await tUSD.balanceOf(contract);
       const userOneDeposit = await savingGroups.addPayment(web3.utils.toWei('1', 'ether'), { from: user1 });
-     
+      const contractFinalBalance = await tUSD.balanceOf(contract);
+      
+      const initialBalance = web3.utils.fromWei(contractInitialBalance, 'ether');
+      const finalBalance = web3.utils.fromWei(contractFinalBalance, 'ether');
+      
       expectEvent(userOneDeposit, 'PayTurn');
-      // expect(totalSaveAmount.toString()).to.equal((2 * 10 ** 17).toString());
+      expect(+finalBalance).greaterThan(+initialBalance);
     });
 
-  //     it("should if the user already pay his turn avoid depositing again", async () => {
-  //       const errorMessage = "Ya ahorraste este turno"; 
-  //       await savingGroups.registerUser(1, { from: admin, value: 1 * 10 ** 17 });
-  //       await savingGroups.registerUser(2, { from: user1, value: 1 * 10 ** 17 });
-  //       await savingGroups.registerUser(3, { from: user2, value: 1 * 10 ** 17 });
-  //       await savingGroups.startRound();
+    it("should fail if the user send an amount of zero", async () => {
+      const errorMessage = "Pago incorrecto";
+     
+      await expectRevert(savingGroups.addPayment(web3.utils.toWei('0', 'ether'), { from: user1 }), errorMessage);
+    });
 
-  //       const userOneDeposit = await savingGroups.payTurn({ from: user1, value: 1 * 10 ** 17 });
-  //       expectEvent(userOneDeposit, 'PayTurn');
-
-  //      await expectRevert(savingGroups.payTurn({ from: user1, value: 1 * 10 ** 17}), errorMessage);
-  //     });
-
-  //     it("should the user must be registered to pay turn", async () => {
-  //       const errorMessage = "Usuario no registrado"; 
-  //       await savingGroups.registerUser(1, { from: admin, value: 1 * 10 ** 17 });
-  //       await savingGroups.registerUser(2, { from: user1, value: 1 * 10 ** 17 });
-  //       await savingGroups.registerUser(3, { from: user2, value: 1 * 10 ** 17 });
-  //       await savingGroups.startRound();
-
-  //       const userOneDeposit = await savingGroups.payTurn({ from: user1, value: 1 * 10 ** 17 });
-  //       expectEvent(userOneDeposit, 'PayTurn');
-
-  //      await expectRevert(savingGroups.payTurn({ from: user3, value: 1 * 10 ** 17}), errorMessage);
-  //     });
-
-  //     it("should return an error if the pay amount is incorrect", async () => {
-  //       const errorMessage = "Monto incorrecto"; 
-  //       await savingGroups.registerUser(1, { from: admin, value: 1 * 10 ** 17 });
-  //       await savingGroups.registerUser(2, { from: user1, value: 1 * 10 ** 17 });
-  //       await savingGroups.registerUser(3, { from: user2, value: 1 * 10 ** 17 });
-  //       await savingGroups.startRound();
-
-  //       const userOneDeposit = await savingGroups.payTurn({ from: user1, value: 1 * 10 ** 17 });
-  //       expectEvent(userOneDeposit, 'PayTurn');
-
-  //      await expectRevert(savingGroups.payTurn({ from: user2, value: 3 * 10 ** 17}), errorMessage);
-  //     });
-
-  //     it("should return an error if is not the user turn to pay", async () => {
-  //       const errorMessage = "En este turno no depositas"; 
-  //       await savingGroups.registerUser(1, { from: admin, value: 1 * 10 ** 17 });
-  //       await savingGroups.registerUser(2, { from: user1, value: 1 * 10 ** 17 });
-  //       await savingGroups.registerUser(3, { from: user2, value: 1 * 10 ** 17 });
-  //       await savingGroups.startRound();
-
-  //       const userOneDeposit = await savingGroups.payTurn({ from: user1, value: 1 * 10 ** 17 });
-  //       expectEvent(userOneDeposit, 'PayTurn');
-
-  //      await expectRevert(savingGroups.payTurn({ from: admin, value: 1 * 10 ** 17}), errorMessage);
-  //     });
+    it("should the user must be registered to add payment", async () => {
+      const errorMessage = "Usuario no registrado"; 
+  
+      await expectRevert(savingGroups.addPayment(web3.utils.toWei('2', 'ether'), { from: user3 }), errorMessage);
+    });
   })
 
   describe("WithdrawFunds", () => {
-    
+    beforeEach(async () => {
+      await savingGroups.registerUser(1, { from: admin });
+      await savingGroups.registerUser(2, { from: user1 });
+      await savingGroups.registerUser(3, { from: user2 });
+      await savingGroups.startRound({ from: admin });
+
+      await savingGroups.addPayment(web3.utils.toWei('1', 'ether'), { from: user1 });
+      await savingGroups.addPayment(web3.utils.toWei('1', 'ether'), { from: user2 });
+    });
+
+    it("should the first turn of the round can withdraw his funds", async () => {
+      const adminInitialBalance = await tUSD.balanceOf(admin);
+      const availableSavings = await savingGroups.getUserAvailableSavings(1);
+      
+      await time.increase(180);
+     
+      const withdraw = await savingGroups.withdrawTurn({ from: admin });
+      const adminFinalBalance = await tUSD.balanceOf(admin);
+      const expectedBalance = Number(web3.utils.fromWei(adminInitialBalance, 'ether')) + Number(web3.utils.fromWei(availableSavings, 'ether'));
+      
+      expectEvent(withdraw, 'WithdrawFunds');
+      expect(Number(web3.utils.fromWei(adminFinalBalance, 'ether'))).to.equal(expectedBalance);
+    })
   })
   
 });
