@@ -27,5 +27,3 @@ jobs:
       - run: npx codechecks
       - run: npm run coverage
       - run: cat coverage/lcov.info | npx coveralls
-      env:
-        CC_SECRET
