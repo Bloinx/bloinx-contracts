@@ -33,7 +33,9 @@ module.exports = {
   mocha: {
     reporter: 'eth-gas-reporter',
     reporterOptions: {
-      excludeContracts: ['Migrations']
+      excludeContracts: ['Migrations'],
+      currency: 'USD',
+      gasPrice: 21
     }
   },
   plugins: ['solidity-coverage'],
