@@ -228,20 +228,20 @@ contract SavingGroups is Modifiers {
         atStage(Stages.Save)
     {
         uint8 senderTurn = users[msg.sender].userTurn;
-        console.log("SenderTurn:", senderTurn);
+        
         uint8 realTurn = getRealTurn();
         require(realTurn > senderTurn, "Espera a llegar a tu turno"); //turn = turno actual de la rosca
         require(users[msg.sender].withdrewAmount == 0 );
         //First transaction that will complete saving of currentTurn and will trigger next turn
         //Because this runs each user action, we are sure the user in turn has its availableSavings complete
         if (turn < realTurn){
-            console.log("complete Savings and advance turn:", turn);
+            
             completeSavingsAndAdvanceTurn(turn);
         }
 
         // Paga adeudos pendientes de availableSavings
         if (obligationAtTime(msg.sender) > users[msg.sender].assignedPayments){
-            console.log("Tiene audeudos pendientes:", obligationAtTime(msg.sender));
+            
             payLateFromSavings(msg.sender);
         }
        
@@ -266,23 +266,18 @@ contract SavingGroups is Modifiers {
     //Esta funcion se verifica que daba correr cada que se reliza un movimiento por parte de un usuario, 
     //solo correrá si es la primera vez que se corre en un turno, ya sea acción de retiro o pago.
     function completeSavingsAndAdvanceTurn(uint8 turno) private atStage(Stages.Save) {
-        console.log("completeSavingsAndAdvanceTurn:", turno);
+        
         for (uint8 i = 0; i < groupSize; i++) {
             address useraddress = addressOrderList[i]; // 3
             address userInTurn = addressOrderList[turno-1];
             uint256 obligation = obligationAtTime(useraddress);
             uint256 debtUser;
-            console.log("userAddress: ", i+1, addressOrderList[i]);
-            console.log("userInTurn: ", addressOrderList[turno-1]);
-            console.log("obligation: ", obligation);
                 
             if(useraddress != userInTurn){
-                console.log("userAddress: ", useraddress, " userInTurn", userInTurn);
-                console.log("userAddress AssignedPayments: ", users[useraddress].assignedPayments);
+                
                 //Assign unassignedPayments
                 if (obligation > users[useraddress].assignedPayments){  //Si hay monto pendiente por cubrir el turno
                     debtUser = obligation - users[useraddress].assignedPayments; //Monto pendiente por asignar 
-                    console.log("debt: ", debtUser);
                 } else {
                     debtUser = 0;
                 }
@@ -290,7 +285,6 @@ contract SavingGroups is Modifiers {
                 if (debtUser>0){
                     //Asignamos pagos pendientes
                     if (users[useraddress].unassignedPayments > 0) {
-                        console.log("unassignedPayments: ", users[useraddress].unassignedPayments);
                         uint256 toAssign;
 												//se paga toda la deuda y sigue con saldo a favor
                         if (debtUser < users[useraddress].unassignedPayments) {
@@ -299,11 +293,8 @@ contract SavingGroups is Modifiers {
                             toAssign = users[useraddress].unassignedPayments;
                         }  
                         users[useraddress].unassignedPayments = users[useraddress].unassignedPayments - toAssign;
-                        console.log("unassignedPayments -->: ", users[useraddress].unassignedPayments);
                         users[useraddress].assignedPayments = users[useraddress].assignedPayments + toAssign;
-                        console.log("assignedPayments --->> ", users[useraddress].assignedPayments);
                         users[userInTurn].availableSavings = users[userInTurn].availableSavings + toAssign;
-                        console.log("availableSavings >>> ", users[userInTurn].availableSavings);
                         //Recalculamos la deuda después de asingación para pagar con deuda
                         debtUser =  obligationAtTime(useraddress) - users[useraddress].assignedPayments;
                     }
@@ -311,25 +302,19 @@ contract SavingGroups is Modifiers {
                     // Si aún sigue habiendo deuda se paga del cashIn
                     if (debtUser > 0) {
                         users[useraddress].latePayments++; //Se marca deudor
-                        console.log("aun debe: ", debtUser, users[useraddress].latePayments);
-                        console.log("pagar con deuda valor total cashIn =", totalCashIn, "Valor deuda: ", debtUser);
                         if (totalCashIn >= debtUser) {
-                            console.log("Si alcanzo para pagar deuda");
                             totalCashIn -= debtUser;
                             users[useraddress].assignedPayments += debtUser;
                             users[useraddress].owedTotalCashIn += debtUser;  //Lo que se debe a la bolsa de CashIn 
                             users[userInTurn].availableSavings += debtUser ;
 
-                            console.log("assignedPayments: ", users[useraddress].assignedPayments);
-                            console.log("owedCashIn: ", users[useraddress].owedTotalCashIn);
-                            console.log("availableSavings: ", users[userInTurn].availableSavings);
+                            
                         } else {
                             console.log("No alcanzo");
                         }
                         
                         //update my own availableCashIn
                         if (users[useraddress].owedTotalCashIn < cashIn){
-                            console.log("si mi deuda es menor al cashin: ", users[useraddress].owedTotalCashIn, cashIn);
                             users[useraddress].availableCashIn = cashIn - users[useraddress].owedTotalCashIn;
                         } else {
                             users[useraddress].availableCashIn = 0;
@@ -343,35 +328,26 @@ contract SavingGroups is Modifiers {
     }
 
     function payLateFromSavings(address _userAddress) internal atStage(Stages.Save){  
-        console.log("payLateFromSavings: ", _userAddress);
+        
         users[_userAddress].availableSavings -= users[_userAddress].owedTotalCashIn;
-        console.log("initialTotalCashIn: ", totalCashIn);
         totalCashIn += users[_userAddress].owedTotalCashIn;
-        console.log("cashInAfterAddOwed: ", totalCashIn);
         users[_userAddress].availableCashIn = cashIn;
-        console.log("availableCashIn: ", users[_userAddress].availableCashIn, cashIn);
         users[_userAddress].owedTotalCashIn = 0;
     } 
 
     function endRound() public atStage(Stages.Save) {
         require(getRealTurn() > groupSize, "No ha terminado la ronda");
-        console.log("EndRound Turn: ", turn);
         for (uint8 turno = turn; turno <= groupSize; turno++) {
-            console.log("EndRound Turno: ", turno);
             completeSavingsAndAdvanceTurn(turno); 
         }
         
         uint256 sumAvailableCashIn = 0;
         for (uint8 i = 0; i < groupSize; i++) {
             address userAddr = addressOrderList[i];
-            sumAvailableCashIn += users[userAddr].availableCashIn;
-            console.log("finalizar la ronda: ");
             if(users[userAddr].availableSavings >= users[userAddr].owedTotalCashIn){
-                console.log("availableSavings: ", users[userAddr].availableSavings);
-                console.log("owedTotalCashIn: ", users[userAddr].owedTotalCashIn);
-               payLateFromSavings(userAddr); 
+                payLateFromSavings(userAddr); 
             }
-            
+            sumAvailableCashIn += users[userAddr].availableCashIn;            
         }
 
         for (uint8 i = 0; i < groupSize; i++) {
@@ -380,8 +356,8 @@ contract SavingGroups is Modifiers {
             users[userAddr].availableSavings = 0;
             users[userAddr].availableCashIn = 0;
             users[userAddr].isActive = false;
-            amountTemp = 0;
             transferTo(users[userAddr].userAddr, amountTemp);
+            amountTemp = 0;
         }
         
         stage = Stages.Finished;        
@@ -400,15 +376,12 @@ contract SavingGroups is Modifiers {
     //Returns the total payment the user should have paid at the moment
     function obligationAtTime(address userAddress) public view returns (uint256) {
 			uint256 expectedObligation;
-            console.log("Obligation at Time turn ", turn);
-            console.log("User Address Turn ", users[userAddress].userTurn);
-			if (users[userAddress].userTurn <= turn){
+            if (users[userAddress].userTurn <= turn){
 					expectedObligation =  saveAmount * (turn-1);
 			} else{
 					expectedObligation =  saveAmount * (turn);
 			}
-            console.log("Expected Obligation ", expectedObligation);
-			return expectedObligation;
+            return expectedObligation;
     }
 
     function getRealTurn() public view atStage(Stages.Save) returns (uint8){ 
