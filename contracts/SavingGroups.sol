@@ -313,6 +313,7 @@ contract SavingGroups is Modifiers {
                         } else {
                             console.log("No alcanzo");
                             stage = Stages.Emergency;
+			    emergencyWithdraw();
                         }
                         
                         //update my own availableCashIn
