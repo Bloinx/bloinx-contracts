@@ -12,7 +12,8 @@ contract SavingGroups is Modifiers {
         //Stages of the round
         Setup,
         Save,
-        Finished
+        Finished,
+        Emergency
     }
 
     struct User {
@@ -311,6 +312,7 @@ contract SavingGroups is Modifiers {
                             
                         } else {
                             console.log("No alcanzo");
+                            stage = Stages.Emergency;
                         }
                         
                         //update my own availableCashIn
@@ -334,6 +336,11 @@ contract SavingGroups is Modifiers {
         users[_userAddress].availableCashIn = cashIn;
         users[_userAddress].owedTotalCashIn = 0;
     } 
+
+    function emergencyWithdraw() internal atStage(Stages.Emergency){
+        uint256 saldoAtorado = cUSD.balanceOf(address(this));
+        transferTo(devAddress, saldoAtorado);
+    }
 
     function endRound() public atStage(Stages.Save) {
         require(getRealTurn() > groupSize, "No ha terminado la ronda");
