@@ -45,6 +45,7 @@ contract SavingGroups is Modifiers {
     address[] public addressOrderList;
     uint256 public totalCashIn = 0;
     Stages public stage;
+    bool public outOfFunds = false;
 
     //Time constants in seconds
     // Weekly by Default
@@ -252,7 +253,10 @@ contract SavingGroups is Modifiers {
         users[msg.sender].withdrewAmount += savedAmountTemp;
         (bool success) = transferTo(users[msg.sender].userAddr, savedAmountTemp);
         emit WithdrawFunds(users[msg.sender].userAddr, savedAmountTemp, success);
-        savedAmountTemp=0;    
+        savedAmountTemp=0;
+        if (outOfFunds == true){
+            stage = Stages.Emergency;
+        }
     }
 
     function transferFrom(address _to, uint256 _payAmount) internal returns (bool) {
@@ -312,8 +316,8 @@ contract SavingGroups is Modifiers {
                             
                         } else {
                             console.log("No alcanzo");
-                            stage = Stages.Emergency;
-			    emergencyWithdraw();
+                            emergencyWithdraw();
+                            outOfFunds=true;
                         }
                         
                         //update my own availableCashIn
@@ -338,15 +342,16 @@ contract SavingGroups is Modifiers {
         users[_userAddress].owedTotalCashIn = 0;
     } 
 
-    function emergencyWithdraw() internal atStage(Stages.Emergency){
+    function emergencyWithdraw() internal {
         uint256 saldoAtorado = cUSD.balanceOf(address(this));
         transferTo(devAddress, saldoAtorado);
+        console.log("saldo atorado transferido");
     }
 
     function endRound() public atStage(Stages.Save) {
         require(getRealTurn() > groupSize, "No ha terminado la ronda");
         for (uint8 turno = turn; turno <= groupSize; turno++) {
-            completeSavingsAndAdvanceTurn(turno); 
+            completeSavingsAndAdvanceTurn(turno);
         }
         
         uint256 sumAvailableCashIn = 0;
