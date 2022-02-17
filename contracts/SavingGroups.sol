@@ -342,7 +342,7 @@ contract SavingGroups is Modifiers {
         uint256 saldoAtorado = cUSD.balanceOf(address(this));
         require(saldoAtorado > 0, "No es mayor a Cero");
         transferTo(devAddress, saldoAtorado);
-        emit EmergencyWithdraw(address(this), saldoAtorado)
+        emit EmergencyWithdraw(address(this), saldoAtorado);
     }
 
     function endRound() public atStage(Stages.Save) {
