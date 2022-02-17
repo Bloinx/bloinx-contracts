@@ -2,10 +2,8 @@
 pragma solidity ^0.7.6;
 pragma experimental ABIEncoderV2;
 
-import "https://github.com/OpenZeppelin/openzeppelin-contracts/blob/release-v3.4-solc-0.7/contracts/token/ERC20/IERC20.sol";
-// https://github.com/OpenZeppelin/openzeppelin-contracts/blob/release-v3.4-solc-0.7/contracts/token/ERC20/IERC20.sol;
+import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "./Modifiers.sol";
-import "hardhat/console.sol";
 
 contract SavingGroups is Modifiers {
     enum Stages {
@@ -51,7 +49,7 @@ contract SavingGroups is Modifiers {
     // Weekly by Default
     uint256 public payTime = 0;
     uint256 public feeCost = 0;
-    address public constant devAddress = 0x84052CEc1d08cF2eB93ffBaB096b88b455Bb9EEE;
+    address public constant devAddress = 0x4bFaF8ff960622b702e653C18b3bF747Abab4368;
     IERC20 public cUSD; // 0x874069fa1eb16d44d622f2e0ca25eea172369bc1
     
     // BloinxEvents
@@ -63,7 +61,7 @@ contract SavingGroups is Modifiers {
     event PayLateTurn(address indexed user, uint8 indexed turn);
     event WithdrawFunds(address indexed user, uint256 indexed amount, bool indexed success);
     event EndRound(address indexed roundAddress, uint256 indexed startAt, uint256 indexed endAt);
-    event EmergencyWithdraw(address indexed roundAddress, uint256 indexed foounds);
+    event EmergencyWithdraw(address indexed roundAddress, uint256 indexed funds);
 
     constructor(
         uint256 _cashIn,
@@ -83,7 +81,7 @@ contract SavingGroups is Modifiers {
         stage = Stages.Setup;
         addressOrderList = new address[](_groupSize);
         require(_payTime > 0, "El tiempo para pagar no puede ser menor a un dia");
-        payTime = _payTime; 
+        payTime = _payTime * 86400; 
         feeCost = (saveAmount * 500)/ 10000; // calculate 5% fee
     }
 
@@ -237,14 +235,12 @@ contract SavingGroups is Modifiers {
         require(users[msg.sender].withdrewAmount == 0 );
         //First transaction that will complete saving of currentTurn and will trigger next turn
         //Because this runs each user action, we are sure the user in turn has its availableSavings complete
-        if (turn < realTurn){
-            
+        if (turn < realTurn){  
             completeSavingsAndAdvanceTurn(turn);
         }
 
         // Paga adeudos pendientes de availableSavings
         if (obligationAtTime(msg.sender) > users[msg.sender].assignedPayments){
-            
             payLateFromSavings(msg.sender);
         }
        
@@ -315,7 +311,6 @@ contract SavingGroups is Modifiers {
 
                             
                         } else {
-                            console.log("No alcanzo");
                             outOfFunds = true;
                             if(i == 1) {
                                 emergencyWithdraw();
@@ -337,7 +332,6 @@ contract SavingGroups is Modifiers {
     }
 
     function payLateFromSavings(address _userAddress) internal atStage(Stages.Save){  
-        
         users[_userAddress].availableSavings -= users[_userAddress].owedTotalCashIn;
         totalCashIn += users[_userAddress].owedTotalCashIn;
         users[_userAddress].availableCashIn = cashIn;
@@ -373,7 +367,6 @@ contract SavingGroups is Modifiers {
                 users[userAddr].availableSavings = 0;
                 users[userAddr].availableCashIn = 0;
                 users[userAddr].isActive = false;
-                console.log("EndRound transferTo ", amountTemp);
                 transferTo(users[userAddr].userAddr, amountTemp);
                 amountTemp = 0;
                 stage = Stages.Finished;        
@@ -391,7 +384,6 @@ contract SavingGroups is Modifiers {
             }
         }
         
-       
     } 
     
     //Getters
