@@ -63,6 +63,7 @@ contract SavingGroups is Modifiers {
     event PayLateTurn(address indexed user, uint8 indexed turn);
     event WithdrawFunds(address indexed user, uint256 indexed amount, bool indexed success);
     event EndRound(address indexed roundAddress, uint256 indexed startAt, uint256 indexed endAt);
+    event EmergencyWithdraw(address indexed roundAddress, uint256 indexed foounds);
 
     constructor(
         uint256 _cashIn,
@@ -254,7 +255,7 @@ contract SavingGroups is Modifiers {
         (bool success) = transferTo(users[msg.sender].userAddr, savedAmountTemp);
         emit WithdrawFunds(users[msg.sender].userAddr, savedAmountTemp, success);
         savedAmountTemp=0;
-        if (outOfFunds == true){
+        if (outOfFunds){
             stage = Stages.Emergency;
         }
     }
@@ -271,7 +272,6 @@ contract SavingGroups is Modifiers {
     //Esta funcion se verifica que daba correr cada que se reliza un movimiento por parte de un usuario, 
     //solo correrá si es la primera vez que se corre en un turno, ya sea acción de retiro o pago.
     function completeSavingsAndAdvanceTurn(uint8 turno) private atStage(Stages.Save) {
-        
         for (uint8 i = 0; i < groupSize; i++) {
             address useraddress = addressOrderList[i]; // 3
             address userInTurn = addressOrderList[turno-1];
@@ -316,8 +316,10 @@ contract SavingGroups is Modifiers {
                             
                         } else {
                             console.log("No alcanzo");
-                            emergencyWithdraw();
-                            outOfFunds=true;
+                            outOfFunds = true;
+                            if(i == 1) {
+                                emergencyWithdraw();
+                            }
                         }
                         
                         //update my own availableCashIn
@@ -344,8 +346,9 @@ contract SavingGroups is Modifiers {
 
     function emergencyWithdraw() internal {
         uint256 saldoAtorado = cUSD.balanceOf(address(this));
+        require(saldoAtorado > 0, "No es mayor a Cero");
         transferTo(devAddress, saldoAtorado);
-        console.log("saldo atorado transferido");
+        emit EmergencyWithdraw(address(this), saldoAtorado)
     }
 
     function endRound() public atStage(Stages.Save) {
@@ -363,18 +366,32 @@ contract SavingGroups is Modifiers {
             sumAvailableCashIn += users[userAddr].availableCashIn;            
         }
 
-        for (uint8 i = 0; i < groupSize; i++) {
-            address userAddr = addressOrderList[i];
-            uint256 amountTemp = users[userAddr].availableSavings + ((users[userAddr].availableCashIn * totalCashIn)/sumAvailableCashIn); 
-            users[userAddr].availableSavings = 0;
-            users[userAddr].availableCashIn = 0;
-            users[userAddr].isActive = false;
-            transferTo(users[userAddr].userAddr, amountTemp);
-            amountTemp = 0;
+        if(!outOfFunds) {
+            for (uint8 i = 0; i < groupSize; i++) {
+                address userAddr = addressOrderList[i];
+                uint256 amountTemp = users[userAddr].availableSavings + ((users[userAddr].availableCashIn * totalCashIn)/sumAvailableCashIn); 
+                users[userAddr].availableSavings = 0;
+                users[userAddr].availableCashIn = 0;
+                users[userAddr].isActive = false;
+                console.log("EndRound transferTo ", amountTemp);
+                transferTo(users[userAddr].userAddr, amountTemp);
+                amountTemp = 0;
+                stage = Stages.Finished;        
+                emit EndRound(address(this), startTime, block.timestamp);
+            }
+        } else {
+          for (uint8 i = 0; i < groupSize; i++) {
+                address userAddr = addressOrderList[i];
+                uint256 amountTemp = users[userAddr].availableSavings + ((users[userAddr].availableCashIn * totalCashIn)/sumAvailableCashIn); 
+                users[userAddr].availableSavings = 0;
+                users[userAddr].availableCashIn = 0;
+                users[userAddr].isActive = false;
+                amountTemp = 0;
+                stage = Stages.Emergency; 
+            }
         }
         
-        stage = Stages.Finished;        
-        emit EndRound(address(this), startTime, block.timestamp);
+       
     } 
     
     //Getters
