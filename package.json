@@ -22,7 +22,8 @@
     "@openzeppelin/test-helpers": "^0.5.13",
     "@truffle/hdwallet-provider": "^1.4.1",
     "dotenv": "^10.0.0",
-    "solhint": "^3.3.6"
+    "solhint": "^3.3.6",
+    "truffle": "5.5.0"
   },
   "devDependencies": {
     "@codechecks/client": "^0.1.12",
