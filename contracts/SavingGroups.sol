@@ -307,16 +307,14 @@ contract SavingGroups is Modifiers {
                             totalCashIn -= debtUser;
                             users[useraddress].assignedPayments += debtUser;
                             users[useraddress].owedTotalCashIn += debtUser;  //Lo que se debe a la bolsa de CashIn 
-                            users[userInTurn].availableSavings += debtUser ;
-
-                            
+                            users[userInTurn].availableSavings += debtUser;
+   
                         } else {
                             outOfFunds = true;
                             if(i == 1) {
                                 emergencyWithdraw();
                             }
-                        }
-                        
+                        }                   
                         //update my own availableCashIn
                         if (users[useraddress].owedTotalCashIn < cashIn){
                             users[useraddress].availableCashIn = cashIn - users[useraddress].owedTotalCashIn;

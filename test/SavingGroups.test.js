@@ -277,7 +277,7 @@ contract("SavingGroups", async (accounts) => {
       const adminInitialBalance = await tUSD.balanceOf(admin);
       const availableSavings = await savingGroups.getUserAvailableSavings(1);
       
-      await time.increase(180);
+      await time.increase(190);
      
       const withdraw = await savingGroups.withdrawTurn({ from: admin });
       const adminFinalBalance = await tUSD.balanceOf(admin);
