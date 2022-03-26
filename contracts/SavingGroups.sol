@@ -2,8 +2,9 @@
 pragma solidity ^0.8.0;
 pragma experimental ABIEncoderV2;
 
-import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+//import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "./Modifiers.sol";
+import "./BLXToken.sol";
 
 contract SavingGroups is Modifiers {
     enum Stages {
@@ -53,6 +54,7 @@ contract SavingGroups is Modifiers {
     uint256 public feeCost = 0;
     //address public constant devAddress = 0x4bFaF8ff960622b702e653C18b3bF747Abab4368;
     IERC20 public cUSD; // 0x874069fa1eb16d44d622f2e0ca25eea172369bc1
+    BLXToken public BLX;
 
     // BloinxEvents
     event RegisterUser(address indexed user, uint8 indexed turn);
@@ -73,7 +75,8 @@ contract SavingGroups is Modifiers {
         uint256 _adminFee,
         uint256 _payTime,
         IERC20 _token,
-        address _devAddress
+        address _devAddress,
+        BLXToken _BLX
     ) public {
         cUSD = _token;
         require(_admin != address(0), "La direccion del administrador no puede ser cero");
@@ -85,6 +88,7 @@ contract SavingGroups is Modifiers {
         saveAmount = _saveAmount * 1e18;
         groupSize = _groupSize;
         devAddress = _devAddress;
+        BLX=_BLX;
         stage = Stages.Setup;
         addressOrderList = new address[](_groupSize);
         require(_payTime > 0, "El tiempo para pagar no puede ser menor a un dia");
@@ -118,6 +122,7 @@ contract SavingGroups is Modifiers {
         totalCashIn += cashIn;
         addressOrderList[_userTurn-1]=msg.sender; //store user
         emit RegisterUser(msg.sender, _userTurn);
+        BLX.mint(msg.sender, 1000000000000000000); //test token mint
     }
 
     function removeUser(uint8 _userTurn)
@@ -373,6 +378,7 @@ contract SavingGroups is Modifiers {
                 uint256 amountTempUsr=amountTemp-amountTempAdmin;
                 transferTo(users[userAddr].userAddr, amountTempUsr);
                 transferTo(admin, amountTempAdmin);
+                BLX.mint(users[userAddr].userAddr, 1000000000000000000);
                 amountTemp = 0;
                 stage = Stages.Finished;
                 emit EndRound(address(this), startTime, block.timestamp);
