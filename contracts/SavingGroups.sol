@@ -37,7 +37,8 @@ contract SavingGroups is Modifiers {
     uint256 public saveAmount; //Payment on each round/cycle
     uint256 public groupSize; //Number of slots for users to participate on the saving circle
     uint256 public adminFee; //The fee the admin will charge to the users, it will be taken from the users cashin
-    address public devAddress;
+    address public devFund; // fees will be sent here
+    address public generalFund; //stuck funds will be sent here
 
     //Counters and flags
     uint256 usersCounter = 0;
@@ -51,8 +52,8 @@ contract SavingGroups is Modifiers {
     //Time constants in seconds
     // Weekly by Default
     uint256 public payTime = 0;
+    uint256 public fee;
     uint256 public feeCost = 0;
-    //address public constant devAddress = 0x4bFaF8ff960622b702e653C18b3bF747Abab4368;
     IERC20 public cUSD; // 0x874069fa1eb16d44d622f2e0ca25eea172369bc1
     BLXToken public BLX;
 
@@ -75,8 +76,10 @@ contract SavingGroups is Modifiers {
         uint256 _adminFee,
         uint256 _payTime,
         IERC20 _token,
-        address _devAddress,
-        BLXToken _BLX
+        BLXToken _BLX,
+        address _devFund,
+        address _generalFund,
+        uint256 _fee
     ) public {
         cUSD = _token;
         require(_admin != address(0), "La direccion del administrador no puede ser cero");
@@ -87,13 +90,15 @@ contract SavingGroups is Modifiers {
         cashIn = _cashIn * 1e18;
         saveAmount = _saveAmount * 1e18;
         groupSize = _groupSize;
-        devAddress = _devAddress;
-        BLX=_BLX;
+        devFund = _devFund;
+        generalFund = _generalFund;
+        BLX = _BLX;
+        fee = _fee;
         stage = Stages.Setup;
         addressOrderList = new address[](_groupSize);
         require(_payTime > 0, "El tiempo para pagar no puede ser menor a un dia");
         payTime = _payTime;//_payTime * 86400;
-        feeCost = (saveAmount * 500)/ 10000; // calculate 5% fee
+        feeCost = (saveAmount * 100 * fee)/ 10000; // calculate 5% fee
     }
 
     modifier atStage(Stages _stage) {
@@ -117,7 +122,7 @@ contract SavingGroups is Modifiers {
         users[msg.sender] = User(msg.sender, _userTurn, cashIn, 0, 0, 0, 0, 0, true, 0); //create user
         (bool registerSuccess) = transferFrom(address(this), cashIn);
         emit PayCashIn(msg.sender, registerSuccess);
-        (bool payFeeSuccess) = transferFrom(devAddress, feeCost);
+        (bool payFeeSuccess) = transferFrom(devFund, feeCost);
         emit PayFee(msg.sender, payFeeSuccess);
         totalCashIn += cashIn;
         addressOrderList[_userTurn-1]=msg.sender; //store user
@@ -348,7 +353,7 @@ contract SavingGroups is Modifiers {
     function emergencyWithdraw() public atStage(Stages.Emergency) {
         uint256 saldoAtorado = cUSD.balanceOf(address(this));
         require(saldoAtorado > 0, "No es mayor a Cero");
-        transferTo(devAddress, saldoAtorado);
+        transferTo(generalFund, saldoAtorado);
         emit EmergencyWithdraw(address(this), saldoAtorado);
     }
 
