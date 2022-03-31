@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: BSD 3-Clause License
-pragma solidity ^0.7.6;
+pragma solidity ^0.8.0;
 
 abstract contract Modifiers {
     modifier onlyAdmin(address admin) {
