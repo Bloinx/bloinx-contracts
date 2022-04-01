@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: BSD 3-Clause License
 
-import "@openzeppelin/contracts/presets/ERC20PresetMinterPauser.sol";
+import "@openzeppelin/contracts/token/ERC20/presets/ERC20PresetMinterPauser.sol";
 
-pragma solidity ^0.7.6;
+pragma solidity ^0.8.0;
 pragma experimental ABIEncoderV2;
 
 contract TestERC20 is ERC20PresetMinterPauser {

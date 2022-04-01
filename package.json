@@ -18,7 +18,7 @@
   "author": "BX Smart Labs",
   "license": "BSD 3-Clause License",
   "dependencies": {
-    "@openzeppelin/contracts": "^3.4.0",
+    "@openzeppelin/contracts": "^4.5.0",
     "@openzeppelin/test-helpers": "^0.5.13",
     "@truffle/hdwallet-provider": "^1.4.1",
     "dotenv": "^10.0.0",
