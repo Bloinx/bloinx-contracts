@@ -88,7 +88,7 @@ contract SavingGroups is Modifiers {
         stage = Stages.Setup;
         addressOrderList = new address[](_groupSize);
         require(_payTime > 0, "El tiempo para pagar no puede ser menor a un dia");
-        payTime = _payTime;//_payTime * 86400;
+        payTime = _payTime * 86400;
         feeCost = (saveAmount * 500)/ 10000; // calculate 5% fee
     }
 
