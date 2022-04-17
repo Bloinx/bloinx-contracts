@@ -474,5 +474,59 @@ contract("SavingGroups", async (accounts) => {
     
       expect(finalBalanceUser1).to.equal((expectedBalance.toFixed(2)).toString());
     });
-  }) 
+  })
+
+  describe('Getters', () => {
+    beforeEach(async () => {
+      await savingGroups.registerUser(1, { from: admin });
+      await savingGroups.registerUser(2, { from: user1 });
+      await savingGroups.registerUser(3, { from: user2 });
+      await savingGroups.startRound({ from: admin });
+    });
+
+    describe('futurePayments', () => {
+      it("should get the number of future payments", async () => {
+        // get admin data
+        const adminFuturePayments = await savingGroups.futurePayments.call({ from: admin });
+        const totalNumberOfPaymentsExpected = await savingGroups.groupSize();
+        const paymentsExpected = Number(web3.utils.fromWei(adminFuturePayments, 'ether'));
+        
+        expect(paymentsExpected).to.equal((totalNumberOfPaymentsExpected - 1));
+      })
+    });
+
+    describe('User Available CashIn', () => {
+      it('should return the user amount available warranty', async () => {
+        const result = await savingGroups.getUserAvailableCashIn(1);
+        const expectedBalance = await savingGroups.cashIn()
+        
+        expect(web3.utils.fromWei(result, 'ether')).to.equal(web3.utils.fromWei(expectedBalance, 'ether'));
+      })
+    });
+
+    describe('User available savings', () => {
+      it('should return how much money is available for the user to withdraw', async () => {
+        await savingGroups.addPayment(web3.utils.toWei('2', 'ether'), { from: user1 });
+        const result = await savingGroups.getUserAvailableSavings(1);
+        
+        expect(web3.utils.fromWei(result, 'ether')).to.equal('1');
+      })
+    });
+
+    describe('User amount paid', () => {
+      it('should return number of assigned payments', async () => {
+        await savingGroups.addPayment(web3.utils.toWei('1', 'ether'), { from: user1 });
+        const result = await savingGroups.getUserAmountPaid(2);
+        
+        expect(web3.utils.fromWei(result, 'ether')).to.equal('1');
+      })
+
+      it('should return number of unassigned payments', async () => {
+        await savingGroups.addPayment(web3.utils.toWei('1', 'ether'), { from: admin });
+        const result = await savingGroups.getUserUnassignedPayments(1);
+        
+        expect(web3.utils.fromWei(result, 'ether')).to.equal('1');
+      })
+    })
+  })
 });
