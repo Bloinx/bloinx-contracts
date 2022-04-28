@@ -24,6 +24,6 @@ jobs:
       - checkout
       - node/install-packages
       - run: npm test
-      - run: npx codechecks
       - run: npm run coverage
-      - run: cat coverage/lcov.info | npx coveralls
+      # - run: npx codechecks
+      # - run: cat coverage/lcov.info | npx coveralls
