@@ -5,6 +5,7 @@ pragma experimental ABIEncoderV2;
 //import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "./Modifiers.sol";
 import "./BLXToken.sol";
+import "hardhat/console.sol";
 
 contract SavingGroups is Modifiers {
     enum Stages {
@@ -39,6 +40,7 @@ contract SavingGroups is Modifiers {
     uint256 public adminFee; //The fee the admin will charge to the users, it will be taken from the users cashin
     address public devFund; // fees will be sent here
     address public generalFund; //stuck funds will be sent here
+    uint256 public _mainStartTime;
 
     //Counters and flags
     uint256 usersCounter = 0;
@@ -52,7 +54,7 @@ contract SavingGroups is Modifiers {
     //Time constants in seconds
     // Weekly by Default
     uint256 public payTime = 0;
-    uint256 public fee;
+    //uint256 public fee = 0;
     uint256 public feeCost = 0;
     IERC20 public cUSD; // 0x874069fa1eb16d44d622f2e0ca25eea172369bc1
     BLXToken public BLX;
@@ -80,10 +82,13 @@ contract SavingGroups is Modifiers {
         address _devFund,
         address _generalFund,
         uint256 _fee
+        //uint256 _mainStartTime
     ) public {
         cUSD = _token;
         require(_admin != address(0), "La direccion del administrador no puede ser cero");
-        require(_groupSize > 1 && _groupSize <= 10, "El tamanio del grupo debe ser mayor a uno y menor o igual a 10");
+        require(_groupSize > 1 && _groupSize <= 12, "El tamanio del grupo debe ser mayor a uno y menor o igual a 12");
+        require(_cashIn <= 5, "El deposito de seguridad debe ser minimo de 5cUSD");
+        require(_cashIn <= 5, "El pago debe ser minimo de 5cUSD");
         require(_adminFee<= 100);
         admin = _admin;
         adminFee = _adminFee;
@@ -93,12 +98,11 @@ contract SavingGroups is Modifiers {
         devFund = _devFund;
         generalFund = _generalFund;
         BLX = _BLX;
-        fee = _fee;
         stage = Stages.Setup;
         addressOrderList = new address[](_groupSize);
         require(_payTime > 0, "El tiempo para pagar no puede ser menor a un dia");
-        payTime = _payTime;//_payTime * 86400;
-        feeCost = (saveAmount * 100 * fee)/ 10000; // calculate 5% fee
+        payTime =  _payTime;//_payTime *86400;
+        feeCost = (saveAmount * 100 * _fee)/ 10000; // calculate 5% fee
     }
 
     modifier atStage(Stages _stage) {
@@ -373,6 +377,10 @@ contract SavingGroups is Modifiers {
         }
 
         if(!outOfFunds) {
+            uint256 totalAdminFee = 0;
+            uint256 amountDevFund = 0;
+            uint256 trimester=((startTime-1646171855)/(90*86400)+1)); //01 Mar 2022 14:57:35 -0700
+            console.log("trimester: ", trimester));
             for (uint8 i = 0; i < groupSize; i++) {
                 address userAddr = addressOrderList[i];
                 uint256 amountTemp = users[userAddr].availableSavings + ((users[userAddr].availableCashIn * totalCashIn)/sumAvailableCashIn);
@@ -380,14 +388,19 @@ contract SavingGroups is Modifiers {
                 users[userAddr].availableCashIn = 0;
                 users[userAddr].isActive = false;
                 uint256 amountTempAdmin=(amountTemp*adminFee)/100;
+                totalAdminFee += amountTempAdmin;
+                console.log("al admin: ",totalAdminFee);
                 uint256 amountTempUsr=amountTemp-amountTempAdmin;
                 transferTo(users[userAddr].userAddr, amountTempUsr);
-                transferTo(admin, amountTempAdmin);
-                BLX.mint(users[userAddr].userAddr, 1000000000000000000);
+                BLX.mint(users[userAddr].userAddr, (amountTemp * users[userAddr].userTurn * (10/trimester)));
+                amountDevFund += (amountTemp * users[userAddr].userTurn * (1/trimester));//7776000
+                console.log("al dev fund: ", amountDevFund);
                 amountTemp = 0;
                 stage = Stages.Finished;
                 emit EndRound(address(this), startTime, block.timestamp);
             }
+            transferTo(admin, totalAdminFee);
+            BLX.mint(devFund, amountDevFund);
         } else {
           for (uint8 i = 0; i < groupSize; i++) {
                 address userAddr = addressOrderList[i];
@@ -404,7 +417,6 @@ contract SavingGroups is Modifiers {
     }
 
     //Getters
-
     //Cuánto le falta por ahorrar total
     function futurePayments() public view returns (uint256) {
 			uint256 totalSaving = (saveAmount*(groupSize-1));
