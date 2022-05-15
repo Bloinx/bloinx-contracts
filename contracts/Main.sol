@@ -9,7 +9,6 @@ import "./BLXToken.sol";
 contract Main is AccessControl {
 
     address public devFund = 0x4bFaF8ff960622b702e653C18b3bF747Abab4368;
-    address public generalFund = 0x4bFaF8ff960622b702e653C18b3bF747Abab4368;
     uint256 public fee = 5;
     IAccessControl public Iblx;
     BLXToken public blx;
@@ -39,7 +38,6 @@ contract Main is AccessControl {
                                                     _token,
                                                     blx,
                                                     devFund,
-                                                    generalFund,
                                                     fee
                                                 );
         Iblx.grantRole(0x0000000000000000000000000000000000000000004d494e5445525f524f4c45, address(newRound));  //minter 0x0000000000000000000000000000000000000000004d494e5445525f524f4c45
@@ -49,10 +47,6 @@ contract Main is AccessControl {
 
     function setDevFundAddress (address _devFund) public onlyRole(DEFAULT_ADMIN_ROLE){//admin 0x0000000000000000000000000000000000000000000041444d494e5f524f4c45
         devFund = _devFund;
-    }
-
-    function setGeneralFundAddress (address _generalFund) public onlyRole(DEFAULT_ADMIN_ROLE){//admin 0x0000000000000000000000000000000000000000000041444d494e5f524f4c45
-        generalFund = _generalFund;
     }
 
     function setFee (uint256 _fee) public onlyRole(DEFAULT_ADMIN_ROLE){//admin 0x0000000000000000000000000000000000000000000041444d494e5f524f4c45

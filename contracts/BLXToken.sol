@@ -28,8 +28,8 @@ contract BLXToken is ERC20, AccessControl {
         _mint(to, amount);
     }
 
-        function burn(address from, uint256 amount) public onlyRole(0x0000000000000000000000000000000000000000004255524e45525f524f4c45){
-        _burn(from, amount);
+        function burn(uint256 amount) public onlyRole(0x0000000000000000000000000000000000000000004255524e45525f524f4c45){
+        _burn(msg.sender, amount);
     }
 
         function cap() public view virtual returns (uint256) {

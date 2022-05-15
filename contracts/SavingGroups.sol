@@ -39,7 +39,6 @@ contract SavingGroups is Modifiers {
     uint256 public groupSize; //Number of slots for users to participate on the saving circle
     uint256 public adminFee; //The fee the admin will charge to the users, it will be taken from the users cashin
     address public devFund; // fees will be sent here
-    address public generalFund; //stuck funds will be sent here
     uint256 public _mainStartTime;
 
     //Counters and flags
@@ -80,7 +79,6 @@ contract SavingGroups is Modifiers {
         IERC20 _token,
         BLXToken _BLX,
         address _devFund,
-        address _generalFund,
         uint256 _fee
         //uint256 _mainStartTime
     ) public {
@@ -96,7 +94,6 @@ contract SavingGroups is Modifiers {
         saveAmount = _saveAmount * 1e18;
         groupSize = _groupSize;
         devFund = _devFund;
-        generalFund = _generalFund;
         BLX = _BLX;
         stage = Stages.Setup;
         addressOrderList = new address[](_groupSize);
@@ -289,9 +286,9 @@ contract SavingGroups is Modifiers {
     //Esta funcion se verifica que daba correr cada que se reliza un movimiento por parte de un usuario,
     //solo correrá si es la primera vez que se corre en un turno, ya sea acción de retiro o pago.
     function completeSavingsAndAdvanceTurn(uint8 turno) private atStage(Stages.Save) {
+        address userInTurn = addressOrderList[turno-1];
         for (uint8 i = 0; i < groupSize; i++) {
             address useraddress = addressOrderList[i]; // 3
-            address userInTurn = addressOrderList[turno-1];
             uint256 obligation = obligationAtTime(useraddress);
             uint256 debtUser;
 
@@ -357,7 +354,7 @@ contract SavingGroups is Modifiers {
     function emergencyWithdraw() public atStage(Stages.Emergency) {
         uint256 saldoAtorado = cUSD.balanceOf(address(this));
         require(saldoAtorado > 0, "No es mayor a Cero");
-        transferTo(generalFund, saldoAtorado);
+        transferTo(users[addressOrderList[turn - 1]].userAddr, saldoAtorado);
         emit EmergencyWithdraw(address(this), saldoAtorado);
     }
 
@@ -379,8 +376,8 @@ contract SavingGroups is Modifiers {
         if(!outOfFunds) {
             uint256 totalAdminFee = 0;
             uint256 amountDevFund = 0;
-            uint256 trimester=((startTime-1646171855)/(90*86400)+1)); //01 Mar 2022 14:57:35 -0700
-            console.log("trimester: ", trimester));
+            uint256 trimester=((startTime-1646171855)/(90*86400)+1); //01 Mar 2022 14:57:35 -0700
+            console.log("trimester: ", trimester);
             for (uint8 i = 0; i < groupSize; i++) {
                 address userAddr = addressOrderList[i];
                 uint256 amountTemp = users[userAddr].availableSavings + ((users[userAddr].availableCashIn * totalCashIn)/sumAvailableCashIn);
@@ -396,11 +393,11 @@ contract SavingGroups is Modifiers {
                 amountDevFund += (amountTemp * users[userAddr].userTurn * (1/trimester));//7776000
                 console.log("al dev fund: ", amountDevFund);
                 amountTemp = 0;
-                stage = Stages.Finished;
                 emit EndRound(address(this), startTime, block.timestamp);
             }
             transferTo(admin, totalAdminFee);
             BLX.mint(devFund, amountDevFund);
+            stage = Stages.Finished;
         } else {
           for (uint8 i = 0; i < groupSize; i++) {
                 address userAddr = addressOrderList[i];
@@ -409,9 +406,8 @@ contract SavingGroups is Modifiers {
                 users[userAddr].availableCashIn = 0;
                 users[userAddr].isActive = false;
                 amountTemp = 0;
-                stage = Stages.Emergency;
             }
-
+            stage = Stages.Emergency;
         }
 
     }
