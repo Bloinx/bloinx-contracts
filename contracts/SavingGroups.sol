@@ -85,8 +85,8 @@ contract SavingGroups is Modifiers {
         cUSD = _token;
         require(_admin != address(0), "La direccion del administrador no puede ser cero");
         require(_groupSize > 1 && _groupSize <= 12, "El tamanio del grupo debe ser mayor a uno y menor o igual a 12");
-        require(_cashIn <= 5, "El deposito de seguridad debe ser minimo de 5cUSD");
-        require(_cashIn <= 5, "El pago debe ser minimo de 5cUSD");
+        require(_cashIn >= 5, "El deposito de seguridad debe ser minimo de 5cUSD");
+        require(_saveAmount >= 5, "El pago debe ser minimo de 5cUSD");
         require(_adminFee<= 100);
         admin = _admin;
         adminFee = _adminFee;
