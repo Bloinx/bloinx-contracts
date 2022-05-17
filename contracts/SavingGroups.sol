@@ -128,7 +128,6 @@ contract SavingGroups is Modifiers {
         totalCashIn += cashIn;
         addressOrderList[_userTurn-1]=msg.sender; //store user
         emit RegisterUser(msg.sender, _userTurn);
-        BLX.mint(msg.sender, 1000000000000000000); //test token mint
     }
 
     function removeUser(uint8 _userTurn)
@@ -285,7 +284,7 @@ contract SavingGroups is Modifiers {
     }
     //Esta funcion se verifica que daba correr cada que se reliza un movimiento por parte de un usuario,
     //solo correrá si es la primera vez que se corre en un turno, ya sea acción de retiro o pago.
-    function completeSavingsAndAdvanceTurn(uint8 turno) private atStage(Stages.Save) {
+    function completeSavingsAndAdvanceTurn(uint8 turno) private {
         address userInTurn = addressOrderList[turno-1];
         for (uint8 i = 0; i < groupSize; i++) {
             address useraddress = addressOrderList[i]; // 3
@@ -323,12 +322,14 @@ contract SavingGroups is Modifiers {
                         users[useraddress].latePayments++; //Se marca deudor
                         if (totalCashIn >= debtUser) {
                             totalCashIn -= debtUser;
+                            console.log("Toma de cash in" , i);
                             users[useraddress].assignedPayments += debtUser;
                             users[useraddress].owedTotalCashIn += debtUser;  //Lo que se debe a la bolsa de CashIn
                             users[userInTurn].availableSavings += debtUser;
 
                         } else {   //se traban los fondos
                             outOfFunds = true;
+                            console.log("outOfFunds completeSavings" , i);
                         }
                         //update my own availableCashIn
                         if (users[useraddress].owedTotalCashIn < cashIn){
@@ -344,17 +345,42 @@ contract SavingGroups is Modifiers {
         turn++;
     }
 
-    function payLateFromSavings(address _userAddress) internal atStage(Stages.Save){
-        users[_userAddress].availableSavings -= users[_userAddress].owedTotalCashIn;
-        totalCashIn += users[_userAddress].owedTotalCashIn;
-        users[_userAddress].availableCashIn = cashIn;
-        users[_userAddress].owedTotalCashIn = 0;
+    function payLateFromSavings(address _userAddress) internal {
+        if (users[_userAddress].availableSavings >= users[_userAddress].owedTotalCashIn){
+            users[_userAddress].availableSavings -= users[_userAddress].owedTotalCashIn;
+            totalCashIn += users[_userAddress].owedTotalCashIn;
+            users[_userAddress].availableCashIn = cashIn;
+            users[_userAddress].owedTotalCashIn = 0;
+        }
+        else{
+            outOfFunds = true;
+            console.log("outOfFunds payLate", _userAddress);
+        }
+
     }
 
     function emergencyWithdraw() public atStage(Stages.Emergency) {
+        require (cUSD.balanceOf(address(this)) > 0, "No hay saldo por retirar");
+        for (uint8 turno = turn; turno <= groupSize; turno++) {
+            completeSavingsAndAdvanceTurn(turno);
+        }
         uint256 saldoAtorado = cUSD.balanceOf(address(this));
-        require(saldoAtorado > 0, "No es mayor a Cero");
-        transferTo(users[addressOrderList[turn - 1]].userAddr, saldoAtorado);
+        for (uint8 i = 0; i < groupSize; i++) {
+                address userAddr = addressOrderList[i];
+                payLateFromSavings(userAddr);
+                if (users[userAddr].withdrewAmount == 0 && saldoAtorado > 0){
+                    if (users[userAddr].availableSavings <= saldoAtorado){
+                        transferTo(users[userAddr].userAddr, users[userAddr].availableSavings);
+                        saldoAtorado -= users[userAddr].availableSavings;
+                    }
+                    else{
+                        transferTo(users[userAddr].userAddr, saldoAtorado);
+                    }
+                }
+        }
+        if (saldoAtorado > 0){
+            transferTo(devFund, saldoAtorado);
+        }
         emit EmergencyWithdraw(address(this), saldoAtorado);
     }
 
@@ -372,30 +398,30 @@ contract SavingGroups is Modifiers {
             }
             sumAvailableCashIn += users[userAddr].availableCashIn;
         }
-
         if(!outOfFunds) {
             uint256 totalAdminFee = 0;
             uint256 amountDevFund = 0;
-            uint256 trimester=((startTime-1646171855)/(90*86400)+1); //01 Mar 2022 14:57:35 -0700
-            console.log("trimester: ", trimester);
             for (uint8 i = 0; i < groupSize; i++) {
                 address userAddr = addressOrderList[i];
-                uint256 amountTemp = users[userAddr].availableSavings + ((users[userAddr].availableCashIn * totalCashIn)/sumAvailableCashIn);
-                users[userAddr].availableSavings = 0;
+                uint256 cashInReturn = ((users[userAddr].availableCashIn * totalCashIn)/sumAvailableCashIn);
                 users[userAddr].availableCashIn = 0;
                 users[userAddr].isActive = false;
-                uint256 amountTempAdmin=(amountTemp*adminFee)/100;
+                uint256 amountTempAdmin=(cashInReturn*adminFee)/100;
                 totalAdminFee += amountTempAdmin;
-                console.log("al admin: ",totalAdminFee);
-                uint256 amountTempUsr=amountTemp-amountTempAdmin;
+                uint256 amountTempUsr = cashInReturn - amountTempAdmin + users[userAddr].availableSavings;
+                users[userAddr].availableSavings = 0;
                 transferTo(users[userAddr].userAddr, amountTempUsr);
-                BLX.mint(users[userAddr].userAddr, (amountTemp * users[userAddr].userTurn * (10/trimester)));
-                amountDevFund += (amountTemp * users[userAddr].userTurn * (1/trimester));//7776000
-                console.log("al dev fund: ", amountDevFund);
-                amountTemp = 0;
+                uint256 reward = (10 * cashInReturn * users[userAddr].userTurn * users[userAddr].userTurn);
+                BLX.mint(users[userAddr].userAddr, reward);
+                console.log("Mint a user", i, " = ", reward);
+                amountDevFund += reward/10;
+                cashInReturn = 0;
+                reward = 0;
                 emit EndRound(address(this), startTime, block.timestamp);
             }
+            console.log("al admin: ",totalAdminFee);
             transferTo(admin, totalAdminFee);
+            console.log("al dev fund: ", amountDevFund);
             BLX.mint(devFund, amountDevFund);
             stage = Stages.Finished;
         } else {
