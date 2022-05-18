@@ -1,4 +1,5 @@
 # Bloinx Defi
+[![Coverage Status](https://coveralls.io/repos/github/Bloinx/bloinx-contracts/badge.svg)](https://coveralls.io/github/Bloinx/bloinx-contracts)
 ## https://bloinx-dapp.netlify.app/
 
 `Proyecto de finanzas descentralizadas`
