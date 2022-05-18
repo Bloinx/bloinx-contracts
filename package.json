@@ -6,6 +6,9 @@
   "directories": {
     "test": "test"
   },
+  "engines": {
+    "node": ">=14.0.0"
+  },
   "scripts": {
     "test": "bash ./scripts/run_tests.sh",
     "coverage": "npx truffle run coverage"
@@ -20,17 +23,17 @@
   "dependencies": {
     "@openzeppelin/contracts": "^4.5.0",
     "@truffle/hdwallet-provider": "^2.0.6",
-    "dotenv": "^10.0.0",
-    "solhint": "^3.3.6",
-    "truffle": "^5.5.10"
+    "truffle": "5.5.4"
   },
   "devDependencies": {
     "@codechecks/client": "^0.1.12",
     "@openzeppelin/test-helpers": "^0.5.15",
     "coveralls": "^3.1.1",
+    "dotenv": "^10.0.0",
+    "solhint": "^3.3.6",
     "eth-gas-reporter": "^0.2.23",
     "mocha-lcov-reporter": "^1.3.0",
-    "solidity-coverage": "^0.7.20",
+    "solidity-coverage": "0.7.17",
     "truffle-plugin-verify": "^0.5.24",
     "web3": "^1.7.0"
   }
