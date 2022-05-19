@@ -26,6 +26,5 @@ jobs:
       - run: npm test
       - run: npm run coverage
       - run: cat coverage/lcov.info | npx coveralls
-      - coveralls/upload
       # - run: npx codechecks
       # - run: cat coverage/lcov.info | npx coveralls
