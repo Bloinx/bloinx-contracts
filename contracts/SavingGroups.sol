@@ -64,7 +64,7 @@ contract SavingGroups is Modifiers {
     event PayFee(address indexed user, bool indexed success);
     event RemoveUser(address indexed removedBy, address indexed user, uint8 indexed turn);
     event PayTurn(address indexed user, bool indexed success);
-    event PayLateTurn(address indexed user, uint8 indexed turn);
+    event LatePayment(address indexed user, uint8 indexed turn);
     event WithdrawFunds(address indexed user, uint256 indexed amount, bool indexed success);
     event EndRound(address indexed roundAddress, uint256 indexed startAt, uint256 indexed endAt);
     event EmergencyWithdraw(address indexed roundAddress, uint256 indexed funds);
@@ -320,6 +320,7 @@ contract SavingGroups is Modifiers {
                     // Si aún sigue habiendo deuda se paga del cashIn
                     if (debtUser > 0) {
                         users[useraddress].latePayments++; //Se marca deudor
+                        emit LatePayment(users[msg.sender].userAddr, turn);
                         if (totalCashIn >= debtUser) {
                             totalCashIn -= debtUser;
                             console.log("Toma de cash in" , i);
