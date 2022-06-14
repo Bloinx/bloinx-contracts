@@ -58,7 +58,7 @@ contract SavingGroups is Modifiers {
     BLXToken public BLX;
 
     // BloinxEvents
-    event RoundCreated(uint256 indexed saveAmount, uint256 indexed groupSize, bool indexed success);
+    event RoundCreated(uint256 indexed saveAmount, uint256 indexed groupSize);
     event RegisterUser(address indexed user, uint8 indexed turn);
     event PayCashIn(address indexed user, bool indexed success);
     event PayFee(address indexed user, bool indexed success);
@@ -99,6 +99,7 @@ contract SavingGroups is Modifiers {
         require(_payTime > 0, "El tiempo para pagar no puede ser menor a un dia");
         payTime =  _payTime;//_payTime *86400;
         feeCost = (saveAmount * 100 * _fee)/ 10000; // calculate 5% fee
+        emit RoundCreated(saveAmount, groupSize);
     }
 
     modifier atStage(Stages _stage) {
