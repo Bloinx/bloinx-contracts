@@ -54,7 +54,7 @@ contract SavingGroups is Modifiers {
     uint256 public payTime = 0;
     //uint256 public fee = 0;
     uint256 public feeCost = 0;
-    IERC20 public cUSD; // 0x874069fa1eb16d44d622f2e0ca25eea172369bc1
+    ERC20 public cUSD; // 0x874069fa1eb16d44d622f2e0ca25eea172369bc1
     BLXToken public BLX;
 
     // BloinxEvents
@@ -76,7 +76,7 @@ contract SavingGroups is Modifiers {
         address _admin,
         uint256 _adminFee,
         uint256 _payTime,
-        IERC20 _token,
+        ERC20 _token,
         BLXToken _BLX,
         address _devFund,
         uint256 _fee
@@ -92,8 +92,8 @@ contract SavingGroups is Modifiers {
         groupSize = _groupSize;
         devFund = _devFund;
         BLX = _BLX;
-        cashIn = _cashIn * 10 ** BLX.decimals();
-        saveAmount = _saveAmount * 10 ** BLX.decimals();
+        cashIn = _cashIn * 10 ** cUSD.decimals();
+        saveAmount = _saveAmount * 10 ** cUSD.decimals();
         stage = Stages.Setup;
         addressOrderList = new address[](_groupSize);
         require(_payTime > 0, "El tiempo para pagar no puede ser menor a un dia");

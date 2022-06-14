@@ -24,7 +24,7 @@ contract Main is AccessControl {
                             uint256 _groupSize,
                             uint256 _adminFee,
                             uint256 _payTime,
-                            IERC20 _token,
+                            ERC20 _token,
                             address _blxaddr
                         ) external payable returns(address) {
         Iblx=IAccessControl(_blxaddr);
