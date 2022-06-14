@@ -39,7 +39,6 @@ contract SavingGroups is Modifiers {
     uint256 public groupSize; //Number of slots for users to participate on the saving circle
     uint256 public adminFee; //The fee the admin will charge to the users, it will be taken from the users cashin
     address public devFund; // fees will be sent here
-    uint256 public _mainStartTime;
 
     //Counters and flags
     uint256 usersCounter = 0;
@@ -59,6 +58,7 @@ contract SavingGroups is Modifiers {
     BLXToken public BLX;
 
     // BloinxEvents
+    event RoundCreated(uint256 indexed saveAmount, uint256 indexed groupSize, bool indexed success);
     event RegisterUser(address indexed user, uint8 indexed turn);
     event PayCashIn(address indexed user, bool indexed success);
     event PayFee(address indexed user, bool indexed success);
@@ -80,7 +80,6 @@ contract SavingGroups is Modifiers {
         BLXToken _BLX,
         address _devFund,
         uint256 _fee
-        //uint256 _mainStartTime
     ) public {
         cUSD = _token;
         require(_admin != address(0), "La direccion del administrador no puede ser cero");
@@ -90,11 +89,11 @@ contract SavingGroups is Modifiers {
         require(_adminFee<= 100);
         admin = _admin;
         adminFee = _adminFee;
-        cashIn = _cashIn * 1e18;
-        saveAmount = _saveAmount * 1e18;
         groupSize = _groupSize;
         devFund = _devFund;
         BLX = _BLX;
+        cashIn = _cashIn * 10 ** BLX.decimals();
+        saveAmount = _saveAmount * 10 ** BLX.decimals();
         stage = Stages.Setup;
         addressOrderList = new address[](_groupSize);
         require(_payTime > 0, "El tiempo para pagar no puede ser menor a un dia");
@@ -267,7 +266,6 @@ contract SavingGroups is Modifiers {
         users[msg.sender].withdrewAmount += savedAmountTemp;
         (bool success) = transferTo(users[msg.sender].userAddr, savedAmountTemp);
         emit WithdrawFunds(users[msg.sender].userAddr, savedAmountTemp, success);
-        savedAmountTemp=0;
         if (outOfFunds){
             stage = Stages.Emergency;
         }
