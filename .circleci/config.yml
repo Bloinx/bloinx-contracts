@@ -7,6 +7,7 @@ version: 2.1
 #   - https://circleci.com/developer/orbs/orb/coveralls/coveralls
 orbs:
   node: circleci/node@5.0.0
+orbs:
   coveralls: coveralls/coveralls@1.0.6
 
 workflows:
