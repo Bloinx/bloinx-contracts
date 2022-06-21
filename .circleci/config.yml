@@ -7,7 +7,7 @@ version: 2.1
 #   - https://circleci.com/developer/orbs/orb/coveralls/coveralls
 orbs:
   node: circleci/node@5.0.0
-  # coveralls: coveralls/coveralls@1.0.6
+  coveralls: coveralls/coveralls@1.0.6
 
 workflows:
   main:
@@ -17,13 +17,24 @@ workflows:
 jobs:
   npm-test:
     docker:
-      - image: cimg/base:stable
+      - image: circleci/node:14.18.2
     steps:
-      - node/install:
-          node-version: "12.22"
+     
       - checkout
-      - node/install-packages
+      - restore_cache:
+        key: dependency-cache-{{ checksum "package.json"}}
+
+      - run: npm install
+  
+      - save_cache:
+          key: dependency-cache-{{ checksum "package.json"}}
+          paths:
+            - ./node_modules
+    
       - run: npm test
-      - run: npx codechecks
       - run: npm run coverage
-      - run: cat coverage/lcov.info | npx coveralls
+      - coveralls/upload:
+          path_to_lcov: ./coverage/lcov.info
+      #- run: cat coverage/lcov.info | npx coveralls
+      # - run: npx codechecks
+      # - run: cat coverage/lcov.info | npx coveralls
