@@ -15,7 +15,6 @@ contract Main is AccessControl {
 
     event RoundCreated(SavingGroups childRound);
 
-<<<<<<< HEAD
     constructor() public {
         _setupRole(DEFAULT_ADMIN_ROLE, msg.sender);
     }
