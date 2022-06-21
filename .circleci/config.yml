@@ -17,12 +17,11 @@ workflows:
 jobs:
   npm-test:
     docker:
-      - image: cimg/base:stable
+      - image: circleci/node:14.18.2
     steps:
-      - node/install:
-          node-version: "14.19.0"
+     
       - checkout
-      - node/install-packages
+      - run: sudo npm install
       - run: npm test
       - run: npm run coverage
       - coveralls/upload:
