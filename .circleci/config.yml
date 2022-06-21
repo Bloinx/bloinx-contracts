@@ -21,7 +21,16 @@ jobs:
     steps:
      
       - checkout
-      - run: sudo npm install
+      - restore_cache:
+        key: dependency-cache-{{ checksum "package.json"}}
+
+      - run: npm install
+  
+      - save_cache:
+          key: dependency-cache-{{ checksum "package.json"}}
+          paths:
+            - ./node_modules
+    
       - run: npm test
       - run: npm run coverage
       - coveralls/upload:
