@@ -2,8 +2,8 @@
 pragma solidity ^0.8.0;
 pragma experimental ABIEncoderV2;
 
-import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "./Modifiers.sol";
+import "./BLXToken.sol";
 
 contract SavingGroups is Modifiers {
     enum Stages {
@@ -36,7 +36,7 @@ contract SavingGroups is Modifiers {
     uint256 public saveAmount; //Payment on each round/cycle
     uint256 public groupSize; //Number of slots for users to participate on the saving circle
     uint256 public adminFee; //The fee the admin will charge to the users, it will be taken from the users cashin
-    address public devAddress;
+    address public devFund; // fees will be sent here
 
     //Counters and flags
     uint256 usersCounter = 0;
@@ -50,17 +50,19 @@ contract SavingGroups is Modifiers {
     //Time constants in seconds
     // Weekly by Default
     uint256 public payTime = 0;
+    //uint256 public fee = 0;
     uint256 public feeCost = 0;
-    //address public constant devAddress = 0x4bFaF8ff960622b702e653C18b3bF747Abab4368;
-    IERC20 public cUSD; // 0x874069fa1eb16d44d622f2e0ca25eea172369bc1
+    ERC20 public cUSD; // 0x874069fa1eb16d44d622f2e0ca25eea172369bc1
+    BLXToken public BLX;
 
     // BloinxEvents
+    event RoundCreated(uint256 indexed saveAmount, uint256 indexed groupSize);
     event RegisterUser(address indexed user, uint8 indexed turn);
     event PayCashIn(address indexed user, bool indexed success);
     event PayFee(address indexed user, bool indexed success);
     event RemoveUser(address indexed removedBy, address indexed user, uint8 indexed turn);
     event PayTurn(address indexed user, bool indexed success);
-    event PayLateTurn(address indexed user, uint8 indexed turn);
+    event LatePayment(address indexed user, uint8 indexed turn);
     event WithdrawFunds(address indexed user, uint256 indexed amount, bool indexed success);
     event EndRound(address indexed roundAddress, uint256 indexed startAt, uint256 indexed endAt);
     event EmergencyWithdraw(address indexed roundAddress, uint256 indexed funds);
@@ -72,24 +74,30 @@ contract SavingGroups is Modifiers {
         address _admin,
         uint256 _adminFee,
         uint256 _payTime,
-        IERC20 _token,
-        address _devAddress
+        ERC20 _token,
+        BLXToken _BLX,
+        address _devFund,
+        uint256 _fee
     ) public {
         cUSD = _token;
         require(_admin != address(0), "La direccion del administrador no puede ser cero");
-        require(_groupSize > 1 && _groupSize <= 10, "El tamanio del grupo debe ser mayor a uno y menor o igual a 10");
+        require(_groupSize > 1 && _groupSize <= 12, "El tamanio del grupo debe ser mayor a uno y menor o igual a 12");
+        require(_cashIn >= 5, "El deposito de seguridad debe ser minimo de 5cUSD");
+        require(_saveAmount >= 5, "El pago debe ser minimo de 5cUSD");
         require(_adminFee<= 100);
         admin = _admin;
         adminFee = _adminFee;
-        cashIn = _cashIn * 1e18;
-        saveAmount = _saveAmount * 1e18;
         groupSize = _groupSize;
-        devAddress = _devAddress;
+        devFund = _devFund;
+        BLX = _BLX;
+        cashIn = _cashIn * 10 ** cUSD.decimals();
+        saveAmount = _saveAmount * 10 ** cUSD.decimals();
         stage = Stages.Setup;
         addressOrderList = new address[](_groupSize);
         require(_payTime > 0, "El tiempo para pagar no puede ser menor a un dia");
-        payTime = _payTime * 86400;
-        feeCost = (saveAmount * 500)/ 10000; // calculate 5% fee
+        payTime = _payTime *86400;
+        feeCost = (saveAmount * 100 * _fee)/ 10000; // calculate 5% fee
+        emit RoundCreated(saveAmount, groupSize);
     }
 
     modifier atStage(Stages _stage) {
@@ -113,7 +121,7 @@ contract SavingGroups is Modifiers {
         users[msg.sender] = User(msg.sender, _userTurn, cashIn, 0, 0, 0, 0, 0, true, 0); //create user
         (bool registerSuccess) = transferFrom(address(this), cashIn);
         emit PayCashIn(msg.sender, registerSuccess);
-        (bool payFeeSuccess) = transferFrom(devAddress, feeCost);
+        (bool payFeeSuccess) = transferFrom(devFund, feeCost);
         emit PayFee(msg.sender, payFeeSuccess);
         totalCashIn += cashIn;
         addressOrderList[_userTurn-1]=msg.sender; //store user
@@ -257,7 +265,6 @@ contract SavingGroups is Modifiers {
         users[msg.sender].withdrewAmount += savedAmountTemp;
         (bool success) = transferTo(users[msg.sender].userAddr, savedAmountTemp);
         emit WithdrawFunds(users[msg.sender].userAddr, savedAmountTemp, success);
-        savedAmountTemp=0;
         if (outOfFunds){
             stage = Stages.Emergency;
         }
@@ -274,10 +281,10 @@ contract SavingGroups is Modifiers {
     }
     //Esta funcion se verifica que daba correr cada que se reliza un movimiento por parte de un usuario,
     //solo correrá si es la primera vez que se corre en un turno, ya sea acción de retiro o pago.
-    function completeSavingsAndAdvanceTurn(uint8 turno) private atStage(Stages.Save) {
+    function completeSavingsAndAdvanceTurn(uint8 turno) private {
+        address userInTurn = addressOrderList[turno-1];
         for (uint8 i = 0; i < groupSize; i++) {
             address useraddress = addressOrderList[i]; // 3
-            address userInTurn = addressOrderList[turno-1];
             uint256 obligation = obligationAtTime(useraddress);
             uint256 debtUser;
 
@@ -310,6 +317,7 @@ contract SavingGroups is Modifiers {
                     // Si aún sigue habiendo deuda se paga del cashIn
                     if (debtUser > 0) {
                         users[useraddress].latePayments++; //Se marca deudor
+                        emit LatePayment(users[msg.sender].userAddr, turn);
                         if (totalCashIn >= debtUser) {
                             totalCashIn -= debtUser;
                             users[useraddress].assignedPayments += debtUser;
@@ -333,17 +341,41 @@ contract SavingGroups is Modifiers {
         turn++;
     }
 
-    function payLateFromSavings(address _userAddress) internal atStage(Stages.Save){
-        users[_userAddress].availableSavings -= users[_userAddress].owedTotalCashIn;
-        totalCashIn += users[_userAddress].owedTotalCashIn;
-        users[_userAddress].availableCashIn = cashIn;
-        users[_userAddress].owedTotalCashIn = 0;
+    function payLateFromSavings(address _userAddress) internal {
+        if (users[_userAddress].availableSavings >= users[_userAddress].owedTotalCashIn){
+            users[_userAddress].availableSavings -= users[_userAddress].owedTotalCashIn;
+            totalCashIn += users[_userAddress].owedTotalCashIn;
+            users[_userAddress].availableCashIn = cashIn;
+            users[_userAddress].owedTotalCashIn = 0;
+        }
+        else{
+            outOfFunds = true;
+        }
+
     }
 
     function emergencyWithdraw() public atStage(Stages.Emergency) {
+        require (cUSD.balanceOf(address(this)) > 0, "No hay saldo por retirar");
+        for (uint8 turno = turn; turno <= groupSize; turno++) {
+            completeSavingsAndAdvanceTurn(turno);
+        }
         uint256 saldoAtorado = cUSD.balanceOf(address(this));
-        require(saldoAtorado > 0, "No es mayor a Cero");
-        transferTo(devAddress, saldoAtorado);
+        for (uint8 i = 0; i < groupSize; i++) {
+                address userAddr = addressOrderList[i];
+                payLateFromSavings(userAddr);
+                if (users[userAddr].withdrewAmount == 0 && saldoAtorado > 0){
+                    if (users[userAddr].availableSavings <= saldoAtorado){
+                        transferTo(users[userAddr].userAddr, users[userAddr].availableSavings);
+                        saldoAtorado -= users[userAddr].availableSavings;
+                    }
+                    else{
+                        transferTo(users[userAddr].userAddr, saldoAtorado);
+                    }
+                }
+        }
+        if (saldoAtorado > 0){
+            transferTo(devFund, saldoAtorado);
+        }
         emit EmergencyWithdraw(address(this), saldoAtorado);
     }
 
@@ -361,22 +393,29 @@ contract SavingGroups is Modifiers {
             }
             sumAvailableCashIn += users[userAddr].availableCashIn;
         }
-
         if(!outOfFunds) {
+            uint256 totalAdminFee = 0;
+            uint256 amountDevFund = 0;
             for (uint8 i = 0; i < groupSize; i++) {
                 address userAddr = addressOrderList[i];
-                uint256 amountTemp = users[userAddr].availableSavings + ((users[userAddr].availableCashIn * totalCashIn)/sumAvailableCashIn);
-                users[userAddr].availableSavings = 0;
+                uint256 cashInReturn = ((users[userAddr].availableCashIn * totalCashIn)/sumAvailableCashIn);
                 users[userAddr].availableCashIn = 0;
                 users[userAddr].isActive = false;
-                uint256 amountTempAdmin=(amountTemp*adminFee)/100;
-                uint256 amountTempUsr=amountTemp-amountTempAdmin;
+                uint256 amountTempAdmin=(cashInReturn*adminFee)/100;
+                totalAdminFee += amountTempAdmin;
+                uint256 amountTempUsr = cashInReturn - amountTempAdmin + users[userAddr].availableSavings;
+                users[userAddr].availableSavings = 0;
                 transferTo(users[userAddr].userAddr, amountTempUsr);
-                transferTo(admin, amountTempAdmin);
-                amountTemp = 0;
-                stage = Stages.Finished;
+                uint256 reward = (10 * cashInReturn * users[userAddr].userTurn * users[userAddr].userTurn);
+                BLX.mint(users[userAddr].userAddr, reward);
+                amountDevFund += reward/10;
+                cashInReturn = 0;
+                reward = 0;
                 emit EndRound(address(this), startTime, block.timestamp);
             }
+            transferTo(admin, totalAdminFee);
+            BLX.mint(devFund, amountDevFund);
+            stage = Stages.Finished;
         } else {
           for (uint8 i = 0; i < groupSize; i++) {
                 address userAddr = addressOrderList[i];
@@ -385,15 +424,13 @@ contract SavingGroups is Modifiers {
                 users[userAddr].availableCashIn = 0;
                 users[userAddr].isActive = false;
                 amountTemp = 0;
-                stage = Stages.Emergency;
             }
-
+            stage = Stages.Emergency;
         }
 
     }
 
     //Getters
-
     //Cuánto le falta por ahorrar total
     function futurePayments() public view returns (uint256) {
 			uint256 totalSaving = (saveAmount*(groupSize-1));
