@@ -2,10 +2,8 @@
 pragma solidity ^0.8.0;
 pragma experimental ABIEncoderV2;
 
-//import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "./Modifiers.sol";
 import "./BLXToken.sol";
-import "hardhat/console.sol";
 
 contract SavingGroups is Modifiers {
     enum Stages {
@@ -97,7 +95,7 @@ contract SavingGroups is Modifiers {
         stage = Stages.Setup;
         addressOrderList = new address[](_groupSize);
         require(_payTime > 0, "El tiempo para pagar no puede ser menor a un dia");
-        payTime =  _payTime;//_payTime *86400;
+        payTime = _payTime *86400;
         feeCost = (saveAmount * 100 * _fee)/ 10000; // calculate 5% fee
         emit RoundCreated(saveAmount, groupSize);
     }
@@ -322,14 +320,12 @@ contract SavingGroups is Modifiers {
                         emit LatePayment(users[msg.sender].userAddr, turn);
                         if (totalCashIn >= debtUser) {
                             totalCashIn -= debtUser;
-                            console.log("Toma de cash in" , i);
                             users[useraddress].assignedPayments += debtUser;
                             users[useraddress].owedTotalCashIn += debtUser;  //Lo que se debe a la bolsa de CashIn
                             users[userInTurn].availableSavings += debtUser;
 
                         } else {   //se traban los fondos
                             outOfFunds = true;
-                            console.log("outOfFunds completeSavings" , i);
                         }
                         //update my own availableCashIn
                         if (users[useraddress].owedTotalCashIn < cashIn){
@@ -354,7 +350,6 @@ contract SavingGroups is Modifiers {
         }
         else{
             outOfFunds = true;
-            console.log("outOfFunds payLate", _userAddress);
         }
 
     }
@@ -413,15 +408,12 @@ contract SavingGroups is Modifiers {
                 transferTo(users[userAddr].userAddr, amountTempUsr);
                 uint256 reward = (10 * cashInReturn * users[userAddr].userTurn * users[userAddr].userTurn);
                 BLX.mint(users[userAddr].userAddr, reward);
-                console.log("Mint a user", i, " = ", reward);
                 amountDevFund += reward/10;
                 cashInReturn = 0;
                 reward = 0;
                 emit EndRound(address(this), startTime, block.timestamp);
             }
-            console.log("al admin: ",totalAdminFee);
             transferTo(admin, totalAdminFee);
-            console.log("al dev fund: ", amountDevFund);
             BLX.mint(devFund, amountDevFund);
             stage = Stages.Finished;
         } else {

@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: BSD 3-Clause License
 pragma solidity ^0.8.0;
 
+import "@openzeppelin/contracts/access/AccessControl.sol";
+import "@openzeppelin/contracts/access/IAccessControl.sol";
 import "./SavingGroups.sol";
-import "https://github.com/OpenZeppelin/openzeppelin-contracts/blob/master/contracts/access/AccessControl.sol";//"@openzeppelin/contracts/access/AccessControl.sol";
-import "https://github.com/OpenZeppelin/openzeppelin-contracts/blob/master/contracts/access/IAccessControl.sol";
 import "./BLXToken.sol";
 
 contract Main is AccessControl {
