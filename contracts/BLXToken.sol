@@ -3,7 +3,7 @@ pragma solidity ^0.8.10;
 
 import "@openzeppelin/contracts/access/AccessControl.sol";
 import "@openzeppelin/contracts/access/IAccessControl.sol";
-import "@openzeppelin/contracts/token/ERC20";
+import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 
 contract BLXToken is ERC20, AccessControl {
     uint256 private immutable _cap;
