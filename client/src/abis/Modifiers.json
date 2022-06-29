@@ -1,7 +1,7 @@
 {
   "contractName": "Modifiers",
   "abi": [],
-  "metadata": "{\"compiler\":{\"version\":\"0.8.13+commit.abaa5c0e\"},\"language\":\"Solidity\",\"output\":{\"abi\":[],\"devdoc\":{\"kind\":\"dev\",\"methods\":{},\"version\":1},\"userdoc\":{\"kind\":\"user\",\"methods\":{},\"version\":1}},\"settings\":{\"compilationTarget\":{\"project:/contracts/Modifiers.sol\":\"Modifiers\"},\"evmVersion\":\"byzantium\",\"libraries\":{},\"metadata\":{\"bytecodeHash\":\"ipfs\"},\"optimizer\":{\"enabled\":true,\"runs\":1500},\"remappings\":[]},\"sources\":{\"project:/contracts/Modifiers.sol\":{\"keccak256\":\"0x52205f40ad64f36a35c8988cea9da31fb5e93b7cd9558a82d42c9c160ea58baf\",\"license\":\"BSD 3-Clause License\",\"urls\":[\"bzz-raw://6cf19c3dbb5b378752406261dfec4611df955d77a3cfe54eec7926766d38cea8\",\"dweb:/ipfs/QmdMpXeRxi5WVoBgHxEVmmR2ezroEdztjK283XzBYwAFmN\"]}},\"version\":1}",
+  "metadata": "{\"compiler\":{\"version\":\"0.8.15+commit.e14f2714\"},\"language\":\"Solidity\",\"output\":{\"abi\":[],\"devdoc\":{\"kind\":\"dev\",\"methods\":{},\"version\":1},\"userdoc\":{\"kind\":\"user\",\"methods\":{},\"version\":1}},\"settings\":{\"compilationTarget\":{\"project:/contracts/Modifiers.sol\":\"Modifiers\"},\"evmVersion\":\"byzantium\",\"libraries\":{},\"metadata\":{\"bytecodeHash\":\"ipfs\"},\"optimizer\":{\"enabled\":true,\"runs\":1500},\"remappings\":[]},\"sources\":{\"project:/contracts/Modifiers.sol\":{\"keccak256\":\"0x52205f40ad64f36a35c8988cea9da31fb5e93b7cd9558a82d42c9c160ea58baf\",\"license\":\"BSD 3-Clause License\",\"urls\":[\"bzz-raw://6cf19c3dbb5b378752406261dfec4611df955d77a3cfe54eec7926766d38cea8\",\"dweb:/ipfs/QmdMpXeRxi5WVoBgHxEVmmR2ezroEdztjK283XzBYwAFmN\"]}},\"version\":1}",
   "bytecode": "0x",
   "deployedBytecode": "0x",
   "immutableReferences": {},
@@ -15,15 +15,15 @@
     "absolutePath": "project:/contracts/Modifiers.sol",
     "exportedSymbols": {
       "Modifiers": [
-        2632
+        2730
       ]
     },
-    "id": 2633,
+    "id": 2731,
     "license": "BSD 3-Clause License",
     "nodeType": "SourceUnit",
     "nodes": [
       {
-        "id": 2604,
+        "id": 2702,
         "literals": [
           "solidity",
           "^",
@@ -40,9 +40,9 @@
         "contractDependencies": [],
         "contractKind": "contract",
         "fullyImplemented": true,
-        "id": 2632,
+        "id": 2730,
         "linearizedBaseContracts": [
-          2632
+          2730
         ],
         "name": "Modifiers",
         "nameLocation": "92:9:19",
@@ -50,7 +50,7 @@
         "nodes": [
           {
             "body": {
-              "id": 2617,
+              "id": 2715,
               "nodeType": "Block",
               "src": "142:97:19",
               "statements": [
@@ -62,14 +62,14 @@
                           "typeIdentifier": "t_address",
                           "typeString": "address"
                         },
-                        "id": 2612,
+                        "id": 2710,
                         "isConstant": false,
                         "isLValue": false,
                         "isPure": false,
                         "lValueRequested": false,
                         "leftExpression": {
                           "expression": {
-                            "id": 2609,
+                            "id": 2707,
                             "name": "msg",
                             "nodeType": "Identifier",
                             "overloadedDeclarations": [],
@@ -80,7 +80,7 @@
                               "typeString": "msg"
                             }
                           },
-                          "id": 2610,
+                          "id": 2708,
                           "isConstant": false,
                           "isLValue": false,
                           "isPure": false,
@@ -96,11 +96,11 @@
                         "nodeType": "BinaryOperation",
                         "operator": "==",
                         "rightExpression": {
-                          "id": 2611,
+                          "id": 2709,
                           "name": "admin",
                           "nodeType": "Identifier",
                           "overloadedDeclarations": [],
-                          "referencedDeclaration": 2606,
+                          "referencedDeclaration": 2704,
                           "src": "174:5:19",
                           "typeDescriptions": {
                             "typeIdentifier": "t_address",
@@ -115,7 +115,7 @@
                       },
                       {
                         "hexValue": "536f6c6f20656c2061646d696e207075656465206c6c616d6172206c612066756e63696f6e",
-                        "id": 2613,
+                        "id": 2711,
                         "isConstant": false,
                         "isLValue": false,
                         "isPure": true,
@@ -141,7 +141,7 @@
                           "typeString": "literal_string \"Solo el admin puede llamar la funcion\""
                         }
                       ],
-                      "id": 2608,
+                      "id": 2706,
                       "name": "require",
                       "nodeType": "Identifier",
                       "overloadedDeclarations": [
@@ -155,7 +155,7 @@
                         "typeString": "function (bool,string memory) pure"
                       }
                     },
-                    "id": 2614,
+                    "id": 2712,
                     "isConstant": false,
                     "isLValue": false,
                     "isPure": false,
@@ -170,33 +170,33 @@
                       "typeString": "tuple()"
                     }
                   },
-                  "id": 2615,
+                  "id": 2713,
                   "nodeType": "ExpressionStatement",
                   "src": "152:69:19"
                 },
                 {
-                  "id": 2616,
+                  "id": 2714,
                   "nodeType": "PlaceholderStatement",
                   "src": "231:1:19"
                 }
               ]
             },
-            "id": 2618,
+            "id": 2716,
             "name": "onlyAdmin",
             "nameLocation": "117:9:19",
             "nodeType": "ModifierDefinition",
             "parameters": {
-              "id": 2607,
+              "id": 2705,
               "nodeType": "ParameterList",
               "parameters": [
                 {
                   "constant": false,
-                  "id": 2606,
+                  "id": 2704,
                   "mutability": "mutable",
                   "name": "admin",
                   "nameLocation": "135:5:19",
                   "nodeType": "VariableDeclaration",
-                  "scope": 2618,
+                  "scope": 2716,
                   "src": "127:13:19",
                   "stateVariable": false,
                   "storageLocation": "default",
@@ -205,7 +205,7 @@
                     "typeString": "address"
                   },
                   "typeName": {
-                    "id": 2605,
+                    "id": 2703,
                     "name": "address",
                     "nodeType": "ElementaryTypeName",
                     "src": "127:7:19",
@@ -226,7 +226,7 @@
           },
           {
             "body": {
-              "id": 2630,
+              "id": 2728,
               "nodeType": "Block",
               "src": "282:128:19",
               "statements": [
@@ -238,17 +238,17 @@
                           "typeIdentifier": "t_bool",
                           "typeString": "bool"
                         },
-                        "id": 2625,
+                        "id": 2723,
                         "isConstant": false,
                         "isLValue": false,
                         "isPure": false,
                         "lValueRequested": false,
                         "leftExpression": {
-                          "id": 2623,
+                          "id": 2721,
                           "name": "user",
                           "nodeType": "Identifier",
                           "overloadedDeclarations": [],
-                          "referencedDeclaration": 2620,
+                          "referencedDeclaration": 2718,
                           "src": "354:4:19",
                           "typeDescriptions": {
                             "typeIdentifier": "t_bool",
@@ -259,7 +259,7 @@
                         "operator": "==",
                         "rightExpression": {
                           "hexValue": "74727565",
-                          "id": 2624,
+                          "id": 2722,
                           "isConstant": false,
                           "isLValue": false,
                           "isPure": true,
@@ -281,7 +281,7 @@
                       },
                       {
                         "hexValue": "5573756172696f206e6f207265676973747261646f",
-                        "id": 2626,
+                        "id": 2724,
                         "isConstant": false,
                         "isLValue": false,
                         "isPure": true,
@@ -307,7 +307,7 @@
                           "typeString": "literal_string \"Usuario no registrado\""
                         }
                       ],
-                      "id": 2622,
+                      "id": 2720,
                       "name": "require",
                       "nodeType": "Identifier",
                       "overloadedDeclarations": [
@@ -321,7 +321,7 @@
                         "typeString": "function (bool,string memory) pure"
                       }
                     },
-                    "id": 2627,
+                    "id": 2725,
                     "isConstant": false,
                     "isLValue": false,
                     "isPure": false,
@@ -336,33 +336,33 @@
                       "typeString": "tuple()"
                     }
                   },
-                  "id": 2628,
+                  "id": 2726,
                   "nodeType": "ExpressionStatement",
                   "src": "346:46:19"
                 },
                 {
-                  "id": 2629,
+                  "id": 2727,
                   "nodeType": "PlaceholderStatement",
                   "src": "402:1:19"
                 }
               ]
             },
-            "id": 2631,
+            "id": 2729,
             "name": "isRegisteredUser",
             "nameLocation": "254:16:19",
             "nodeType": "ModifierDefinition",
             "parameters": {
-              "id": 2621,
+              "id": 2719,
               "nodeType": "ParameterList",
               "parameters": [
                 {
                   "constant": false,
-                  "id": 2620,
+                  "id": 2718,
                   "mutability": "mutable",
                   "name": "user",
                   "nameLocation": "276:4:19",
                   "nodeType": "VariableDeclaration",
-                  "scope": 2631,
+                  "scope": 2729,
                   "src": "271:9:19",
                   "stateVariable": false,
                   "storageLocation": "default",
@@ -371,7 +371,7 @@
                     "typeString": "bool"
                   },
                   "typeName": {
-                    "id": 2619,
+                    "id": 2717,
                     "name": "bool",
                     "nodeType": "ElementaryTypeName",
                     "src": "271:4:19",
@@ -390,7 +390,7 @@
             "visibility": "internal"
           }
         ],
-        "scope": 2633,
+        "scope": 2731,
         "src": "74:338:19",
         "usedErrors": []
       }
@@ -401,15 +401,15 @@
     "absolutePath": "project:/contracts/Modifiers.sol",
     "exportedSymbols": {
       "Modifiers": [
-        2632
+        2730
       ]
     },
-    "id": 2633,
+    "id": 2731,
     "license": "BSD 3-Clause License",
     "nodeType": "SourceUnit",
     "nodes": [
       {
-        "id": 2604,
+        "id": 2702,
         "literals": [
           "solidity",
           "^",
@@ -426,9 +426,9 @@
         "contractDependencies": [],
         "contractKind": "contract",
         "fullyImplemented": true,
-        "id": 2632,
+        "id": 2730,
         "linearizedBaseContracts": [
-          2632
+          2730
         ],
         "name": "Modifiers",
         "nameLocation": "92:9:19",
@@ -436,7 +436,7 @@
         "nodes": [
           {
             "body": {
-              "id": 2617,
+              "id": 2715,
               "nodeType": "Block",
               "src": "142:97:19",
               "statements": [
@@ -448,14 +448,14 @@
                           "typeIdentifier": "t_address",
                           "typeString": "address"
                         },
-                        "id": 2612,
+                        "id": 2710,
                         "isConstant": false,
                         "isLValue": false,
                         "isPure": false,
                         "lValueRequested": false,
                         "leftExpression": {
                           "expression": {
-                            "id": 2609,
+                            "id": 2707,
                             "name": "msg",
                             "nodeType": "Identifier",
                             "overloadedDeclarations": [],
@@ -466,7 +466,7 @@
                               "typeString": "msg"
                             }
                           },
-                          "id": 2610,
+                          "id": 2708,
                           "isConstant": false,
                           "isLValue": false,
                           "isPure": false,
@@ -482,11 +482,11 @@
                         "nodeType": "BinaryOperation",
                         "operator": "==",
                         "rightExpression": {
-                          "id": 2611,
+                          "id": 2709,
                           "name": "admin",
                           "nodeType": "Identifier",
                           "overloadedDeclarations": [],
-                          "referencedDeclaration": 2606,
+                          "referencedDeclaration": 2704,
                           "src": "174:5:19",
                           "typeDescriptions": {
                             "typeIdentifier": "t_address",
@@ -501,7 +501,7 @@
                       },
                       {
                         "hexValue": "536f6c6f20656c2061646d696e207075656465206c6c616d6172206c612066756e63696f6e",
-                        "id": 2613,
+                        "id": 2711,
                         "isConstant": false,
                         "isLValue": false,
                         "isPure": true,
@@ -527,7 +527,7 @@
                           "typeString": "literal_string \"Solo el admin puede llamar la funcion\""
                         }
                       ],
-                      "id": 2608,
+                      "id": 2706,
                       "name": "require",
                       "nodeType": "Identifier",
                       "overloadedDeclarations": [
@@ -541,7 +541,7 @@
                         "typeString": "function (bool,string memory) pure"
                       }
                     },
-                    "id": 2614,
+                    "id": 2712,
                     "isConstant": false,
                     "isLValue": false,
                     "isPure": false,
@@ -556,33 +556,33 @@
                       "typeString": "tuple()"
                     }
                   },
-                  "id": 2615,
+                  "id": 2713,
                   "nodeType": "ExpressionStatement",
                   "src": "152:69:19"
                 },
                 {
-                  "id": 2616,
+                  "id": 2714,
                   "nodeType": "PlaceholderStatement",
                   "src": "231:1:19"
                 }
               ]
             },
-            "id": 2618,
+            "id": 2716,
             "name": "onlyAdmin",
             "nameLocation": "117:9:19",
             "nodeType": "ModifierDefinition",
             "parameters": {
-              "id": 2607,
+              "id": 2705,
               "nodeType": "ParameterList",
               "parameters": [
                 {
                   "constant": false,
-                  "id": 2606,
+                  "id": 2704,
                   "mutability": "mutable",
                   "name": "admin",
                   "nameLocation": "135:5:19",
                   "nodeType": "VariableDeclaration",
-                  "scope": 2618,
+                  "scope": 2716,
                   "src": "127:13:19",
                   "stateVariable": false,
                   "storageLocation": "default",
@@ -591,7 +591,7 @@
                     "typeString": "address"
                   },
                   "typeName": {
-                    "id": 2605,
+                    "id": 2703,
                     "name": "address",
                     "nodeType": "ElementaryTypeName",
                     "src": "127:7:19",
@@ -612,7 +612,7 @@
           },
           {
             "body": {
-              "id": 2630,
+              "id": 2728,
               "nodeType": "Block",
               "src": "282:128:19",
               "statements": [
@@ -624,17 +624,17 @@
                           "typeIdentifier": "t_bool",
                           "typeString": "bool"
                         },
-                        "id": 2625,
+                        "id": 2723,
                         "isConstant": false,
                         "isLValue": false,
                         "isPure": false,
                         "lValueRequested": false,
                         "leftExpression": {
-                          "id": 2623,
+                          "id": 2721,
                           "name": "user",
                           "nodeType": "Identifier",
                           "overloadedDeclarations": [],
-                          "referencedDeclaration": 2620,
+                          "referencedDeclaration": 2718,
                           "src": "354:4:19",
                           "typeDescriptions": {
                             "typeIdentifier": "t_bool",
@@ -645,7 +645,7 @@
                         "operator": "==",
                         "rightExpression": {
                           "hexValue": "74727565",
-                          "id": 2624,
+                          "id": 2722,
                           "isConstant": false,
                           "isLValue": false,
                           "isPure": true,
@@ -667,7 +667,7 @@
                       },
                       {
                         "hexValue": "5573756172696f206e6f207265676973747261646f",
-                        "id": 2626,
+                        "id": 2724,
                         "isConstant": false,
                         "isLValue": false,
                         "isPure": true,
@@ -693,7 +693,7 @@
                           "typeString": "literal_string \"Usuario no registrado\""
                         }
                       ],
-                      "id": 2622,
+                      "id": 2720,
                       "name": "require",
                       "nodeType": "Identifier",
                       "overloadedDeclarations": [
@@ -707,7 +707,7 @@
                         "typeString": "function (bool,string memory) pure"
                       }
                     },
-                    "id": 2627,
+                    "id": 2725,
                     "isConstant": false,
                     "isLValue": false,
                     "isPure": false,
@@ -722,33 +722,33 @@
                       "typeString": "tuple()"
                     }
                   },
-                  "id": 2628,
+                  "id": 2726,
                   "nodeType": "ExpressionStatement",
                   "src": "346:46:19"
                 },
                 {
-                  "id": 2629,
+                  "id": 2727,
                   "nodeType": "PlaceholderStatement",
                   "src": "402:1:19"
                 }
               ]
             },
-            "id": 2631,
+            "id": 2729,
             "name": "isRegisteredUser",
             "nameLocation": "254:16:19",
             "nodeType": "ModifierDefinition",
             "parameters": {
-              "id": 2621,
+              "id": 2719,
               "nodeType": "ParameterList",
               "parameters": [
                 {
                   "constant": false,
-                  "id": 2620,
+                  "id": 2718,
                   "mutability": "mutable",
                   "name": "user",
                   "nameLocation": "276:4:19",
                   "nodeType": "VariableDeclaration",
-                  "scope": 2631,
+                  "scope": 2729,
                   "src": "271:9:19",
                   "stateVariable": false,
                   "storageLocation": "default",
@@ -757,7 +757,7 @@
                     "typeString": "bool"
                   },
                   "typeName": {
-                    "id": 2619,
+                    "id": 2717,
                     "name": "bool",
                     "nodeType": "ElementaryTypeName",
                     "src": "271:4:19",
@@ -776,7 +776,7 @@
             "visibility": "internal"
           }
         ],
-        "scope": 2633,
+        "scope": 2731,
         "src": "74:338:19",
         "usedErrors": []
       }
@@ -785,11 +785,11 @@
   },
   "compiler": {
     "name": "solc",
-    "version": "0.8.13+commit.abaa5c0e.Emscripten.clang"
+    "version": "0.8.15+commit.e14f2714.Emscripten.clang"
   },
   "networks": {},
   "schemaVersion": "3.4.2",
-  "updatedAt": "2022-04-02T02:04:05.746Z",
+  "updatedAt": "2022-06-22T18:38:41.915Z",
   "devdoc": {
     "kind": "dev",
     "methods": {},
