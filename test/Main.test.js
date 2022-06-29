@@ -109,7 +109,7 @@ contract("Main", async (accounts) => {
 
     it("should fail if setDevAddress is not call by main owner", async () => {
       const errorMessage =
-        "AccessControl: account 0x4f8887f8261c94f2552c3f351e9e7fb3b0e280ca is missing role 0x0000000000000000000000000000000000000000000000000000000000000000";
+        `AccessControl: account ${user1} is missing role 0x0000000000000000000000000000000000000000000000000000000000000000`;
       const newDevAddress = accounts[3];
 
       await expectRevert(
@@ -130,7 +130,7 @@ contract("Main", async (accounts) => {
 
     it("should fail if setFee is not called by owner", async () => {
         const errorMessage =
-        "AccessControl: account 0x4f8887f8261c94f2552c3f351e9e7fb3b0e280ca is missing role 0x0000000000000000000000000000000000000000000000000000000000000000";
+        `AccessControl: account ${user1} is missing role 0x0000000000000000000000000000000000000000000000000000000000000000`;
         const newFee = 10;
 
         await expectRevert (
