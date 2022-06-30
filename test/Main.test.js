@@ -1,70 +1,136 @@
-const { expectRevert } = require("@openzeppelin/test-helpers");
+const { expectRevert, expectEvent } = require("@openzeppelin/test-helpers");
+const web3 = require("web3");
 const Main = artifacts.require("Main");
+const BlxToken = artifacts.require("BLXToken");
+const cUSD = artifacts.require("TestERC20");
 
-contract("Main", async accounts => {
-    const adminFee = 10;
-    let instance;
+contract("Main", async (accounts) => {
+  const adminFee = 10;
+  let blxToken;
+  let instance;
+  let celoDollar;
+  const [deployer, user1] = [accounts[0], accounts[1]];
 
-    beforeEach(async () => {
-        instance = await Main.deployed();
+  beforeEach(async () => {
+    blxToken = await BlxToken.new("blxToken", "BLXT", 100, { from: deployer });
+    instance = await Main.deployed();
+    celoDollar = await cUSD.new();
+
+    let role = web3.utils.asciiToHex("ADMIN_MINTER_ROLE");
+    let newRole = role.replace("0x", "0x000000000000000000000000000000");
+
+    await blxToken.grantRole(newRole, instance.address);
+  });
+
+  describe("Create Round", () => {
+    it("should deploy Main contract correctly", async () => {
+      expect(instance.address).to.not.equal(0);
     });
 
-    describe("Create Round", () => {
-        it("should deploy Main contract correctly", async () => {
-            expect(instance.address).to.not.equal(0)
-        })
-    
-        it("should create a new round correctly", async () => {
-            // uint _warranty, uint256 _saving, uint256 _groupSize, uint256 _adminFee, uint256 _payTime, IERC20 _token
-            const result = await instance.createRound(1, 1, 4, adminFee, 160, "0x874069fa1eb16d44d622f2e0ca25eea172369bc1");
-            expect(result).to.have.a.property('receipt');
-        })
-    
-        it("should return an error if the group size is greater than 10", async () => {
-            const errorMessage = "El tamanio del grupo debe ser mayor a uno y menor o igual a 10";
-    
-            await expectRevert(
-                instance.createRound(1, 1, 20, adminFee, 160, "0x874069fa1eb16d44d622f2e0ca25eea172369bc1"),
-                errorMessage
-            );
-        })
-    
-        it("should return an error if the group size is less than 2", async () => {
-            const errorMessage = "El tamanio del grupo debe ser mayor a uno y menor o igual a 10";
-    
-            await expectRevert(
-                instance.createRound(1, 1, 0, adminFee, 160, "0x874069fa1eb16d44d622f2e0ca25eea172369bc1"),
-                errorMessage
-            )
-        })
-    
-        it("should return an error if the payTime duration is less than a day", async () => {
-            const errorMessage = "El tiempo para pagar no puede ser menor a un dia";
-    
-            await expectRevert(
-                instance.createRound(1, 1, 3, adminFee, 0, "0x874069fa1eb16d44d622f2e0ca25eea172369bc1"),
-                errorMessage
-            )
-        })
+    it("should create a new round correctly", async () => {
+      // uint _warranty, uint256 _saving, uint256 _groupSize, uint256 _adminFee, uint256 _payTime, IERC20 _token,address _blxaddr
+      const result = await instance.createRound(
+        5,
+        5,
+        4,
+        adminFee,
+        2,
+        celoDollar.address,
+        blxToken.address
+      );
+
+      expectEvent(result, "RoundCreated");
+      expect(result).to.have.a.property("receipt");
     });
 
-    describe("Set Dev Address", () => {
-        it("should set new dev address", async () => {
-            const owner = await instance.owner()
-            const newDevAddress = accounts[3];
-            
-            await instance.setDevAddress(newDevAddress, { from: owner });
-            const result = await instance.devAddress();
-            
-            expect(result).to.equal(newDevAddress);
-        })
+    it("should return an error if the group size is greater than 12", async () => {
+      const errorMessage =
+        "El tamanio del grupo debe ser mayor a uno y menor o igual a 12";
 
-        it("should fail if setDevAddress is not call by main owner", async () => {
-            const errorMessage = "Ownable: caller is not the owner";
-            const newDevAddress = accounts[3];
-            
-            await expectRevert(instance.setDevAddress(newDevAddress, { from: accounts[1] }), errorMessage);
-        })
-    })
-   
-})
+      await expectRevert(
+        instance.createRound(
+          5,
+          5,
+          20,
+          adminFee,
+          1,
+          celoDollar.address,
+          blxToken.address
+        ),
+        errorMessage
+      );
+    });
+
+    it("should return an error if the group size is less than 2", async () => {
+      const errorMessage =
+        "El tamanio del grupo debe ser mayor a uno y menor o igual a 12";
+
+      await expectRevert(
+        instance.createRound(
+          5,
+          5,
+          0,
+          adminFee,
+          2,
+          celoDollar.address,
+          blxToken.address
+        ),
+        errorMessage
+      );
+    });
+
+    it("should return an error if the payTime duration is less than a day", async () => {
+      const errorMessage = "El tiempo para pagar no puede ser menor a un dia";
+
+      await expectRevert(
+        instance.createRound(
+          5,
+          5,
+          3,
+          adminFee,
+          0,
+          celoDollar.address,
+          blxToken.address
+        ),
+        errorMessage
+      );
+    });
+  });
+
+  describe("Set Dev Address", () => {
+    it("should set new dev address", async () => {
+      const newDevAddress = accounts[3];
+
+      await instance.setDevFundAddress(newDevAddress, { from: deployer });
+      const result = await instance.devFund();
+
+      expect(result).to.equal(newDevAddress);
+    });
+
+    it("should fail if setDevAddress is not call by main owner", async () => {
+      const newDevAddress = accounts[3];
+
+      await expectRevert.unspecified(
+        instance.setDevFundAddress(newDevAddress, { from: user1 })
+      );
+    });
+  });
+
+  describe("Set Fee", () => {
+    it("should set new fee", async () => {
+        const newFee = 10;
+        await instance.setFee(newFee, { from: deployer });
+        const fee = await instance.fee();
+       
+        expect(fee.toNumber()).to.equal(newFee);
+    });
+
+    it("should fail if setFee is not called by owner", async () => {
+        const newFee = 10;
+
+        await expectRevert.unspecified(
+          instance.setFee(newFee, { from: user1 })
+        );
+    });
+  })
+});
