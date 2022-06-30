@@ -486,7 +486,7 @@ contract("SavingGroups", async (accounts) => {
     });
   })
 
-  describe.skip('Getters', () => {
+  describe('Getters', () => {
     beforeEach(async () => {
       await savingGroups.registerUser(1, { from: admin });
       await savingGroups.registerUser(2, { from: user1 });
@@ -498,10 +498,11 @@ contract("SavingGroups", async (accounts) => {
       it("should get the number of future payments", async () => {
         // get admin data
         const adminFuturePayments = await savingGroups.futurePayments.call({ from: admin });
+        const payAmount = await savingGroups.cashIn();
         const totalNumberOfPaymentsExpected = await savingGroups.groupSize();
-        const paymentsExpected = Number(web3.utils.fromWei(adminFuturePayments, 'ether'));
-
-        expect(paymentsExpected).to.equal((totalNumberOfPaymentsExpected - 1));
+        const paymentsExpected = Number(web3.utils.toWei(adminFuturePayments, 'wei'));
+       
+        expect(paymentsExpected).to.equal((totalNumberOfPaymentsExpected - 1) * payAmount);
       })
     });
 
@@ -516,10 +517,11 @@ contract("SavingGroups", async (accounts) => {
 
     describe('User available savings', () => {
       it('should return how much money is available for the user to withdraw', async () => {
-        await savingGroups.addPayment(web3.utils.toWei('2', 'ether'), { from: user1 });
+        const payment = '5';
+        await savingGroups.addPayment(web3.utils.toWei(payment, 'ether'), { from: user1 });
         const result = await savingGroups.getUserAvailableSavings(1);
-
-        expect(web3.utils.fromWei(result, 'ether')).to.equal('1');
+        
+        expect(web3.utils.fromWei(result, 'ether')).to.equal(payment);
       })
     });
 
