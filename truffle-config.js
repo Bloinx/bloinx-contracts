@@ -29,21 +29,37 @@ module.exports = {
       gas: 3000000,
       gasPrice: 225000000000
     },
+    alfajores: {
+      provider: () => new HDWalletProvider(process.env.ALFAJORES_PRIVATE_KEY, `https://alfajores-forno.celo-testnet.org`),
+      network_id: 44787,
+      gas: 4000000,
+    },
+    celo: {
+      provider: () => new HDWalletProvider(process.env.CELO_PRIVATE_KEY, `https://forno.celo.org`),
+      network_id: 42220,
+      gas: 4000000,
+    },
   },
   mocha: {
-
+    reporter: 'eth-gas-reporter',
+    reporterOptions: {
+      excludeContracts: ['Migrations'],
+      currency: 'USD',
+      gasPrice: 21
+    }
   },
+  plugins: ['solidity-coverage', 'truffle-plugin-verify'],
   compilers: {
     solc: {
-      version: "0.7.4",    // Fetch exact version from solc-bin (default: truffle's version)
+      version: "^0.8.0",    // Fetch exact version from solc-bin (default: truffle's version)
       // docker: true,        // Use "0.5.1" you've installed locally with docker (default: false)
-      // settings: {          // See the solidity docs for advice about optimization and evmVersion
-      //  optimizer: {
-      //    enabled: false,
-      //    runs: 200
-      //  },
-      //  evmVersion: "byzantium"
-      // }
+      settings: {          // See the solidity docs for advice about optimization and evmVersion
+       optimizer: {
+         enabled: true,
+         runs: 1500
+       },
+      evmVersion: "byzantium"
+      }
     },
   },
 };
