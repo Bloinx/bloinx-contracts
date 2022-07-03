@@ -67,12 +67,6 @@ contract SavingGroups is Modifiers {
     event EndRound(address indexed roundAddress, uint256 indexed startAt, uint256 indexed endAt);
     event EmergencyWithdraw(address indexed roundAddress, uint256 indexed funds);
 
-     // BloinxEvents
-    event RegisterUser(address indexed user, uint256 indexed turn);
-    event RemoveUser(address indexed user, uint256 indexed turn);
-    event PayTurn(address indexed user);
-    event PayLateTurn(address indexed user, uint256 indexed turn);
-
     constructor(
         uint256 _cashIn,
         uint256 _saveAmount,
