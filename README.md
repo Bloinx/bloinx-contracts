@@ -1,10 +1,13 @@
-# Bloinx Defi
+# Bloinx Saving Circles
 [![Coverage Status](https://coveralls.io/repos/github/Bloinx/bloinx-contracts/badge.svg?branch=main)](https://coveralls.io/github/Bloinx/bloinx-contracts?branch=main)
-## https://bloinx-dapp.netlify.app/
+
+## [Bloinx App](https://bloinx.app/login)
+
+## [Website](https://bloinx.io/)
 
 `Proyecto de finanzas descentralizadas`
 
-## Heramientas Usadas.
+## Heramientas Usadas
 
 * Desarrollo de Smart-Contracts en Solidity
 * Ganache para simular blockchain local
