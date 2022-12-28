@@ -53,7 +53,7 @@ contract SavingGroups is Modifiers {
     uint256 public payTime = 0;
     //uint256 public fee = 0;
     uint256 public feeCost = 0;
-    ERC20 public stableToken; // 0x874069fa1eb16d44d622f2e0ca25eea172369bc1
+    ERC20 public stableToken; // USDC Polygon Muimbai 0x0FA8781a83E46826621b3BC094Ea2A0212e71B23
     //BLXToken public BLX;
 
     // BloinxEvents
