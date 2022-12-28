@@ -3,7 +3,8 @@ pragma solidity ^0.8.0;
 pragma experimental ABIEncoderV2;
 
 import "./Modifiers.sol";
-import "./BLXToken.sol";
+import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
+//import "./BLXToken.sol";
 
 contract SavingGroups is Modifiers {
     enum Stages {
@@ -52,8 +53,8 @@ contract SavingGroups is Modifiers {
     uint256 public payTime = 0;
     //uint256 public fee = 0;
     uint256 public feeCost = 0;
-    ERC20 public cUSD; // 0x874069fa1eb16d44d622f2e0ca25eea172369bc1
-    BLXToken public BLX;
+    ERC20 public stableToken; // 0x874069fa1eb16d44d622f2e0ca25eea172369bc1
+    //BLXToken public BLX;
 
     // BloinxEvents
     event RoundCreated(uint256 indexed saveAmount, uint256 indexed groupSize);
@@ -75,23 +76,23 @@ contract SavingGroups is Modifiers {
         uint256 _adminFee,
         uint256 _payTime,
         ERC20 _token,
-        BLXToken _BLX,
+        //BLXToken _BLX,
         address _devFund,
         uint256 _fee
     ) public {
-        cUSD = _token;
+        stableToken = _token;
         require(_admin != address(0), "La direccion del administrador no puede ser cero");
         require(_groupSize > 1 && _groupSize <= 12, "El tamanio del grupo debe ser mayor a uno y menor o igual a 12");
-        require(_cashIn >= 5, "El deposito de seguridad debe ser minimo de 5cUSD");
-        require(_saveAmount >= 5, "El pago debe ser minimo de 5cUSD");
+        require(_cashIn >= 2, "El deposito de seguridad debe ser minimo de 2 USD");
+        require(_saveAmount >= 2, "El pago debe ser minimo de 2 USD");
         require(_adminFee<= 100);
         admin = _admin;
         adminFee = _adminFee;
         groupSize = _groupSize;
         devFund = _devFund;
-        BLX = _BLX;
-        cashIn = _cashIn * 10 ** cUSD.decimals();
-        saveAmount = _saveAmount * 10 ** cUSD.decimals();
+        //BLX = _BLX;
+        cashIn = _cashIn * 10 ** stableToken.decimals();
+        saveAmount = _saveAmount * 10 ** stableToken.decimals();
         stage = Stages.Setup;
         addressOrderList = new address[](_groupSize);
         require(_payTime > 0, "El tiempo para pagar no puede ser menor a un dia");
@@ -271,12 +272,12 @@ contract SavingGroups is Modifiers {
     }
 
     function transferFrom(address _to, uint256 _payAmount) internal returns (bool) {
-      bool success = cUSD.transferFrom(msg.sender, _to, _payAmount);
+      bool success = stableToken.transferFrom(msg.sender, _to, _payAmount);
       return success;
     }
 
     function transferTo(address _to, uint256 _amount) internal returns (bool) {
-      bool success = cUSD.transfer(_to, _amount);
+      bool success = stableToken.transfer(_to, _amount);
       return success;
     }
     //Esta funcion se verifica que daba correr cada que se reliza un movimiento por parte de un usuario,
@@ -355,11 +356,11 @@ contract SavingGroups is Modifiers {
     }
 
     function emergencyWithdraw() public atStage(Stages.Emergency) {
-        require (cUSD.balanceOf(address(this)) > 0, "No hay saldo por retirar");
+        require (stableToken.balanceOf(address(this)) > 0, "No hay saldo por retirar");
         for (uint8 turno = turn; turno <= groupSize; turno++) {
             completeSavingsAndAdvanceTurn(turno);
         }
-        uint256 saldoAtorado = cUSD.balanceOf(address(this));
+        uint256 saldoAtorado = stableToken.balanceOf(address(this));
         for (uint8 i = 0; i < groupSize; i++) {
                 address userAddr = addressOrderList[i];
                 payLateFromSavings(userAddr);
@@ -407,14 +408,14 @@ contract SavingGroups is Modifiers {
                 users[userAddr].availableSavings = 0;
                 transferTo(users[userAddr].userAddr, amountTempUsr);
                 uint256 reward = (10 * cashInReturn * users[userAddr].userTurn * users[userAddr].userTurn);
-                BLX.mint(users[userAddr].userAddr, reward);
+                //BLX.mint(users[userAddr].userAddr, reward);
                 amountDevFund += reward/10;
                 cashInReturn = 0;
                 reward = 0;
                 emit EndRound(address(this), startTime, block.timestamp);
             }
             transferTo(admin, totalAdminFee);
-            BLX.mint(devFund, amountDevFund);
+            //BLX.mint(devFund, amountDevFund);
             stage = Stages.Finished;
         } else {
           for (uint8 i = 0; i < groupSize; i++) {
