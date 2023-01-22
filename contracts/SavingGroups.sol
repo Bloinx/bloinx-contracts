@@ -3,8 +3,7 @@ pragma solidity ^0.8.0;
 pragma experimental ABIEncoderV2;
 
 import "./Modifiers.sol";
-import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
-//import "./BLXToken.sol";
+import "./BLXToken.sol";
 
 contract SavingGroups is Modifiers {
     enum Stages {
@@ -51,10 +50,10 @@ contract SavingGroups is Modifiers {
     //Time constants in seconds
     // Weekly by Default
     uint256 public payTime = 0;
-    //uint256 public fee = 0;
+    uint256 public fee = 0;
     uint256 public feeCost = 0;
     ERC20 public stableToken; // USDC Polygon Muimbai 0x0FA8781a83E46826621b3BC094Ea2A0212e71B23
-    //BLXToken public BLX;
+    BLXToken public BLX;
 
     // BloinxEvents
     event RoundCreated(uint256 indexed saveAmount, uint256 indexed groupSize);
@@ -76,7 +75,7 @@ contract SavingGroups is Modifiers {
         uint256 _adminFee,
         uint256 _payTime,
         ERC20 _token,
-        //BLXToken _BLX,
+        BLXToken _BLX,
         address _devFund,
         uint256 _fee
     ) public {
@@ -90,13 +89,13 @@ contract SavingGroups is Modifiers {
         adminFee = _adminFee;
         groupSize = _groupSize;
         devFund = _devFund;
-        //BLX = _BLX;
+        BLX = _BLX;
         cashIn = _cashIn * 10 ** stableToken.decimals();
         saveAmount = _saveAmount * 10 ** stableToken.decimals();
         stage = Stages.Setup;
         addressOrderList = new address[](_groupSize);
         require(_payTime > 0, "El tiempo para pagar no puede ser menor a un dia");
-        payTime = _payTime *86400;
+        payTime = _payTime * 60; //86400;
         feeCost = (saveAmount * 100 * _fee)/ 10000; // calculate 5% fee
         emit RoundCreated(saveAmount, groupSize);
     }

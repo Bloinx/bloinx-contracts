@@ -4,14 +4,14 @@ pragma solidity ^0.8.0;
 import "@openzeppelin/contracts/access/AccessControl.sol";
 import "@openzeppelin/contracts/access/IAccessControl.sol";
 import "./SavingGroups.sol";
-//import "./BLXToken.sol";
+import "./BLXToken.sol";
 
 contract Main is AccessControl {
 
-    address public devFund = 0x4bFaF8ff960622b702e653C18b3bF747Abab4368;
+    address public devFund = 0xd1Fa9e091f65027F897FC3F911032C3ec8390D3f;
     uint256 public fee = 5;
-//    IAccessControl public Iblx;
-//    BLXToken public blx;
+    IAccessControl public Iblx;
+    BLXToken public blx;
 
     event RoundCreated(SavingGroups childRound);
 
@@ -24,11 +24,11 @@ contract Main is AccessControl {
                             uint256 _groupSize,
                             uint256 _adminFee,
                             uint256 _payTime,
-                            ERC20 _token//,
-                            //address _blxaddr
+                            ERC20 _token,
+                            address _blxaddr
                         ) external payable returns(address) {
-        //Iblx=IAccessControl(_blxaddr);
-        //blx=BLXToken(_blxaddr);
+        Iblx=IAccessControl(_blxaddr);
+        blx=BLXToken(address(0));
         SavingGroups newRound = new SavingGroups(   _warranty,
                                                     _saving,
                                                     _groupSize,
@@ -36,7 +36,7 @@ contract Main is AccessControl {
                                                     _adminFee,
                                                     _payTime,
                                                     _token,
-                                                    //blx,
+                                                    blx,
                                                     devFund,
                                                     fee
                                                 );
