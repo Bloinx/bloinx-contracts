@@ -4,8 +4,9 @@ pragma experimental ABIEncoderV2;
 
 import "./Modifiers.sol";
 import "./BLXToken.sol";
+import "@chainlink/contracts/src/v0.8/interfaces/AggregatorV3Interface.sol";
 
-contract SavingGroups is Modifiers {
+contract SavingGroupsMXN is Modifiers {
     enum Stages {
         //Stages of the round
         Setup,
@@ -54,6 +55,7 @@ contract SavingGroups is Modifiers {
     uint256 public feeCost = 0;
     ERC20 public stableToken; // USDC Polygon Muimbai 0x0FA8781a83E46826621b3BC094Ea2A0212e71B23
     BLXToken public BLX;
+    AggregatorV3Interface internal priceFeed;
 
     // BloinxEvents
     event RoundCreated(uint256 indexed saveAmount, uint256 indexed groupSize);
@@ -124,6 +126,12 @@ contract SavingGroups is Modifiers {
         );
         payTime = _payTime * 60; //86400;
         feeCost = (saveAmount * 100 * _fee) / 10000; // calculate 5% fee
+        // Data Feed MXN/USD
+        priceFeed = AggregatorV3Interface(
+            0x171b16562EA3476F5C61d1b8dad031DbA0768545
+            // Mumbai DAI/USD
+            // 0x0FCAa9c899EC5A91eBc3D5Dd869De833b06fB046
+        );
         emit RoundCreated(saveAmount, groupSize);
     }
 
@@ -588,5 +596,18 @@ contract SavingGroups is Modifiers {
     function getUserIsActive(uint8 _userTurn) public view returns (bool) {
         address userAddr = addressOrderList[_userTurn - 1];
         return (users[userAddr].isActive);
+    }
+
+    function getLatestPrice() public view returns (int) {
+        // prettier-ignore
+        (
+            /* uint80 roundID */,
+            int price,
+            /*uint startedAt*/,
+            /*uint timeStamp*/,
+            /*uint80 answeredInRound*/
+        ) = priceFeed.latestRoundData();
+        // este resultado se debe multiplicar por 10 ** -8, para que de el valor de 1 MXN en USD ej. 0.055 usd = 1 MXN
+        return price;
     }
 }
