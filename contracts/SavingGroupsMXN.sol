@@ -1,6 +1,5 @@
 // SPDX-License-Identifier: BSD 3-Clause License
-pragma solidity ^0.8.0;
-pragma experimental ABIEncoderV2;
+pragma solidity ^0.8.18;
 
 import "./Modifiers.sol";
 import "./BLXToken.sol";
@@ -97,19 +96,10 @@ contract SavingGroupsMXN is Modifiers {
         uint256 _fee
     ) public {
         stableToken = _token;
-        require(
-            _admin != address(0),
-            "La direccion del administrador no puede ser cero"
-        );
-        require(
-            _groupSize > 1 && _groupSize <= 12,
-            "El tamanio del grupo debe ser mayor a uno y menor o igual a 12"
-        );
-        require(
-            _cashIn >= 2,
-            "El deposito de seguridad debe ser minimo de 2 USD"
-        );
-        require(_saveAmount >= 2, "El pago debe ser minimo de 2 USD");
+        require(_admin != address(0), "address cant be zero");
+        require(_groupSize > 1 && _groupSize <= 12, "group size error");
+        require(_cashIn >= 2, "deposit qty error");
+        require(_saveAmount >= 2, "payment qty error");
         require(_adminFee <= 100);
         admin = _admin;
         adminFee = _adminFee;
@@ -120,10 +110,7 @@ contract SavingGroupsMXN is Modifiers {
         saveAmount = _saveAmount * 10 ** stableToken.decimals();
         stage = Stages.Setup;
         addressOrderList = new address[](_groupSize);
-        require(
-            _payTime > 0,
-            "El tiempo para pagar no puede ser menor a un dia"
-        );
+        require(_payTime > 0, "paytime error");
         payTime = _payTime * 60; //86400;
         feeCost = (saveAmount * 100 * _fee) / 10000; // calculate 5% fee
         // Data Feed MXN/USD
@@ -136,20 +123,14 @@ contract SavingGroupsMXN is Modifiers {
     }
 
     modifier atStage(Stages _stage) {
-        require(stage == _stage, "Stage incorrecto para ejecutar la funcion");
+        require(stage == _stage, "Stage incorrecto");
         _;
     }
 
     function registerUser(uint8 _userTurn) external atStage(Stages.Setup) {
-        require(
-            !users[msg.sender].isActive,
-            "Ya estas registrado en esta ronda"
-        );
-        require(usersCounter < groupSize, "El grupo esta completo"); //the saving circle is full
-        require(
-            addressOrderList[_userTurn - 1] == address(0),
-            "Este lugar ya esta ocupado"
-        );
+        require(!users[msg.sender].isActive, "already registered");
+        require(usersCounter < groupSize, "group is full"); //the saving circle is full
+        require(addressOrderList[_userTurn - 1] == address(0), "turn taken");
         usersCounter++;
         users[msg.sender] = User(
             msg.sender,
@@ -176,16 +157,10 @@ contract SavingGroupsMXN is Modifiers {
         require(
             msg.sender == admin ||
                 msg.sender == addressOrderList[_userTurn - 1],
-            "No tienes autorizacion para eliminar a este usuario"
+            "not autorized"
         );
-        require(
-            addressOrderList[_userTurn - 1] != address(0),
-            "Este turno esta vacio"
-        );
-        require(
-            admin != addressOrderList[_userTurn - 1],
-            "No puedes eliminar al administrador de la ronda"
-        );
+        require(addressOrderList[_userTurn - 1] != address(0), "turn empty");
+        require(admin != addressOrderList[_userTurn - 1], "not allowed");
         address removeAddress = addressOrderList[_userTurn - 1];
         if (users[removeAddress].availableCashIn > 0) {
             //if user has cashIn available, send it back
@@ -201,7 +176,7 @@ contract SavingGroupsMXN is Modifiers {
     }
 
     function startRound() external onlyAdmin(admin) atStage(Stages.Setup) {
-        require(usersCounter == groupSize, "Aun hay lugares sin asignar");
+        require(usersCounter == groupSize, "unassigned turns");
         stage = Stages.Save;
         startTime = block.timestamp;
     }
@@ -308,7 +283,7 @@ contract SavingGroupsMXN is Modifiers {
         uint8 senderTurn = users[msg.sender].userTurn;
 
         uint8 realTurn = getRealTurn();
-        require(realTurn > senderTurn, "Espera a llegar a tu turno"); //turn = turno actual de la rosca
+        require(realTurn > senderTurn, "No es tu turno"); //turn = turno actual de la rosca
         require(users[msg.sender].withdrewAmount == 0);
         //First transaction that will complete saving of currentTurn and will trigger next turn
         //Because this runs each user action, we are sure the user in turn has its availableSavings complete
@@ -436,10 +411,7 @@ contract SavingGroupsMXN is Modifiers {
     }
 
     function emergencyWithdraw() public atStage(Stages.Emergency) {
-        require(
-            stableToken.balanceOf(address(this)) > 0,
-            "No hay saldo por retirar"
-        );
+        require(stableToken.balanceOf(address(this)) > 0, "empty balance");
         for (uint8 turno = turn; turno <= groupSize; turno++) {
             completeSavingsAndAdvanceTurn(turno);
         }
@@ -466,7 +438,7 @@ contract SavingGroupsMXN is Modifiers {
     }
 
     function endRound() public atStage(Stages.Save) {
-        require(getRealTurn() > groupSize, "No ha terminado la ronda");
+        require(getRealTurn() > groupSize, "No ha finalizado");
         for (uint8 turno = turn; turno <= groupSize; turno++) {
             completeSavingsAndAdvanceTurn(turno);
         }
@@ -598,7 +570,7 @@ contract SavingGroupsMXN is Modifiers {
         return (users[userAddr].isActive);
     }
 
-    function getLatestPrice() public view returns (int) {
+    function getLatestPrice() internal view returns (int) {
         // prettier-ignore
         (
             /* uint80 roundID */,
