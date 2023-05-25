@@ -1,24 +1,27 @@
 // SPDX-License-Identifier: BSD 3-Clause License
 pragma solidity ^0.8.18;
 
-import "@openzeppelin/contracts/access/AccessControl.sol";
-import "@openzeppelin/contracts/access/IAccessControl.sol";
+// import "@openzeppelin/contracts/access/AccessControl.sol";
+// import "@openzeppelin/contracts/access/IAccessControl.sol";
 import "./SavingGroups.sol";
 import "./SavingGroupsMXN.sol";
-import "./BLXToken.sol";
 
-contract Main is AccessControl {
-    address public devFund = 0xd1Fa9e091f65027F897FC3F911032C3ec8390D3f;
+// import "./BLXToken.sol";
+
+contract Main {
+    // is AccessControl
+    address public DEV_FUND = 0xd1Fa9e091f65027F897FC3F911032C3ec8390D3f;
     uint256 public fee = 5;
-    IAccessControl public Iblx;
-    BLXToken public blx;
+    // IAccessControl public Iblx;
+    // BLXToken public blx;
 
-    event UsdRoundCreated(SavingGroups childRound);
-    event MxnRoundCreated(SavingGroupsMXN childRoundMXN);
+    event RoundCreated(address indexed savingGroup);
 
-    constructor() public {
-        _setupRole(DEFAULT_ADMIN_ROLE, msg.sender);
-    }
+    // event MxnRoundCreated(SavingGroupsMXN childRoundMXN);
+
+    // constructor() public {
+    //     // _setupRole(DEFAULT_ADMIN_ROLE, msg.sender);
+    // }
 
     function createRoundUSD(
         uint256 _warranty,
@@ -26,11 +29,11 @@ contract Main is AccessControl {
         uint256 _groupSize,
         uint256 _adminFee,
         uint256 _payTime,
-        ERC20 _token,
-        address _blxaddr
+        ERC20 _token
     ) external payable returns (address) {
-        Iblx = IAccessControl(_blxaddr);
-        blx = BLXToken(address(0));
+        // sepueden eliminar estos valores setear IAccess en el constructor
+        // Iblx = IAccessControl(_blxaddr);
+        // blx = BLXToken(address(0));
         require(
             ERC20(_token) != ERC20(0xBD1fe73e1f12bD2bc237De9b626F056f21f86427),
             "MXN not allowed"
@@ -43,12 +46,12 @@ contract Main is AccessControl {
             _adminFee,
             _payTime,
             _token,
-            blx,
-            devFund,
+            BLXToken(address(0)), // blx,
+            DEV_FUND,
             fee
         );
         //Iblx.grantRole(0x0000000000000000000000000000000000000000004d494e5445525f524f4c45, address(newRound));  //minter 0x0000000000000000000000000000000000000000004d494e5445525f524f4c45
-        emit UsdRoundCreated(newRound);
+        emit RoundCreated(address(newRound));
         return address(newRound);
     }
 
@@ -57,11 +60,17 @@ contract Main is AccessControl {
         uint256 _saving,
         uint256 _groupSize,
         uint256 _adminFee,
-        uint256 _payTime,
-        address _blxaddr
-    ) external payable returns (address) {
-        Iblx = IAccessControl(_blxaddr);
-        blx = BLXToken(address(0));
+        uint256 _payTime
+    )
+        external
+        payable
+        returns (
+            // address _blxaddr
+            address
+        )
+    {
+        // Iblx = IAccessControl(_blxaddr);
+        // blx = BLXToken(address(0));
         SavingGroupsMXN newRound = new SavingGroupsMXN(
             _warranty,
             _saving,
@@ -70,23 +79,23 @@ contract Main is AccessControl {
             _adminFee,
             _payTime,
             ERC20(0xBD1fe73e1f12bD2bc237De9b626F056f21f86427),
-            blx,
-            devFund,
+            BLXToken(address(0)),
+            DEV_FUND,
             fee
         );
         //Iblx.grantRole(0x0000000000000000000000000000000000000000004d494e5445525f524f4c45, address(newRound));  //minter 0x0000000000000000000000000000000000000000004d494e5445525f524f4c45
-        emit MxnRoundCreated(newRound);
+        emit RoundCreated(address(newRound));
         return address(newRound);
     }
 
-    function setDevFundAddress(
-        address _devFund
-    ) public onlyRole(DEFAULT_ADMIN_ROLE) {
+    function setDevFundAddress(address _devFund) public {
+        // onlyRole(DEFAULT_ADMIN_ROLE)
         //admin 0x0000000000000000000000000000000000000000000041444d494e5f524f4c45
-        devFund = _devFund;
+        DEV_FUND = _devFund;
     }
 
-    function setFee(uint256 _fee) public onlyRole(DEFAULT_ADMIN_ROLE) {
+    function setFee(uint256 _fee) public {
+        // onlyRole(DEFAULT_ADMIN_ROLE)
         //admin 0x0000000000000000000000000000000000000000000041444d494e5f524f4c45
         fee = _fee;
     }
