@@ -49,7 +49,7 @@ contract SavingGroups is Modifiers {
 
     //Time constants in seconds
     // Weekly by Default
-    uint256 public payTime = 0;
+    uint256 public payTime = 7;
     //uint256 public fee = 0;
     uint256 public feeCost = 0;
     ERC20 public cUSD; // 0x874069fa1eb16d44d622f2e0ca25eea172369bc1
@@ -94,8 +94,8 @@ contract SavingGroups is Modifiers {
         saveAmount = _saveAmount * 10 ** cUSD.decimals();
         stage = Stages.Setup;
         addressOrderList = new address[](_groupSize);
-        require(_payTime > 0, "El tiempo para pagar no puede ser menor a un dia");
-        payTime = _payTime *86400;
+        require(_payTime > 6 && _payTime <=30, "El tiempo para pagar no puede ser menor a una semana");
+        payTime = _payTime *86400; //24 hours
         feeCost = (saveAmount * 100 * _fee)/ 10000; // calculate 5% fee
         emit RoundCreated(saveAmount, groupSize);
     }
