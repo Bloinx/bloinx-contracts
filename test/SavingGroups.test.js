@@ -33,7 +33,7 @@ contract("SavingGroups", async (accounts) => {
     await tUSD.transfer(user2, web3.utils.toWei('25', 'ether'));
     await tUSD.transfer(user3, web3.utils.toWei('25', 'ether'));
     // uint _warranty, uint256 _saving, uint256 _groupSize, address admin, uint256 adminFee, uint256 _payTime, ERC20 _token, address devAddress
-    savingGroups = await SavingGroups.new(5, 5, 3, admin, 10, 1, tUSD.address, blxToken.address, devAddress, 5);
+    savingGroups = await SavingGroups.new(5, 5, 3, admin, 10, 7, tUSD.address, blxToken.address, devAddress, 5);
 
     contract = savingGroups.address;
     await tUSD.approve(contract, web3.utils.toWei('100', 'ether'), { from: admin });
@@ -288,7 +288,7 @@ contract("SavingGroups", async (accounts) => {
       const adminInitialBalance = await tUSD.balanceOf(admin);
       const availableSavings = await savingGroups.getUserAvailableSavings(1);
 
-      await time.increase(time.duration.days(2));
+      await time.increase(time.duration.days(8));
 
       const withdraw = await savingGroups.withdrawTurn({ from: admin });
       const adminFinalBalance = await tUSD.balanceOf(admin);
@@ -308,7 +308,7 @@ contract("SavingGroups", async (accounts) => {
         const adminInitialBalance = await tUSD.balanceOf(admin);
         const availableSavings = await savingGroups.getUserAvailableSavings(1);
 
-        await time.increase(time.duration.days(2));
+        await time.increase(time.duration.days(21));
 
         const withdraw = await savingGroups.withdrawTurn({ from: admin });
         const adminFinalBalance = await tUSD.balanceOf(admin);
@@ -330,7 +330,7 @@ contract("SavingGroups", async (accounts) => {
 
       await savingGroups.addPayment(web3.utils.toWei('1', 'ether'), { from: user1 });
 
-      await time.increase(time.duration.days(2));
+      await time.increase(time.duration.days(21));
 
       await savingGroups.withdrawTurn({ from: admin });
     });
@@ -371,7 +371,7 @@ contract("SavingGroups", async (accounts) => {
       await savingGroups.addPayment(web3.utils.toWei('10', 'ether'), { from: user1 });
       await savingGroups.addPayment(web3.utils.toWei('10', 'ether'), { from: user2 });
 
-      await time.increase(time.duration.days(3));;
+      await time.increase(time.duration.days(21));
       const endRound = await savingGroups.endRound({ from: admin });
 
       expectEvent(endRound, 'EndRound');
@@ -396,13 +396,13 @@ contract("SavingGroups", async (accounts) => {
       const calcFee = (Number(totalCashIn.toString()) - web3.utils.toWei('5', 'ether')) * Number(feeAmount.toString()) / 100;
 
       // all users withdraw his funds
-      await time.increase(time.duration.days(2));
+      await time.increase(time.duration.days(21));
       await savingGroups.withdrawTurn({ from: admin });
-      await time.increase(time.duration.days(2));
+      await time.increase(time.duration.days(21));
       await savingGroups.withdrawTurn({ from: user1 });
-      await time.increase(time.duration.days(2));
+      await time.increase(time.duration.days(21));
       await savingGroups.withdrawTurn({ from: user2 });
-      await time.increase(time.duration.days(2));
+      await time.increase(time.duration.days(21));
 
       // out of funds mut be false
       const outOfFunds = await savingGroups.outOfFunds();
@@ -425,11 +425,11 @@ contract("SavingGroups", async (accounts) => {
 
     it("should not transfer admin fee if round is out of funds", async () => {
       // all users withdraw his funds
-      await time.increase(time.duration.days(2));
+      await time.increase(time.duration.days(21));
       await savingGroups.withdrawTurn({ from: admin });
-      await time.increase(time.duration.days(2));
+      await time.increase(time.duration.days(21));
       await savingGroups.withdrawTurn({ from: user1 });
-      await time.increase(time.duration.days(2));
+      await time.increase(time.duration.days(21));
 
       // out of funds mut be true
       const outOfFunds = await savingGroups.outOfFunds();
@@ -453,13 +453,13 @@ contract("SavingGroups", async (accounts) => {
       const calcFee = (Number(totalCashIn.toString()) - web3.utils.toWei('5', 'ether')) * Number(feeAmount.toString()) / 100;
 
       // all users withdraw his funds
-      await time.increase(time.duration.days(2));
+      await time.increase(time.duration.days(21));
       await savingGroups.withdrawTurn({ from: admin });
-      await time.increase(time.duration.days(2));
+      await time.increase(time.duration.days(21));
       await savingGroups.withdrawTurn({ from: user1 });
-      await time.increase(time.duration.days(2));
+      await time.increase(time.duration.days(21));
       await savingGroups.withdrawTurn({ from: user2 });
-      await time.increase(time.duration.days(2));
+      await time.increase(time.duration.days(21));
 
       // out of funds mut be false
       const outOfFunds = await savingGroups.outOfFunds();

@@ -34,7 +34,7 @@ contract("Main", async (accounts) => {
         5,
         4,
         adminFee,
-        2,
+        7,
         celoDollar.address,
         blxToken.address
       );
@@ -53,7 +53,7 @@ contract("Main", async (accounts) => {
           5,
           20,
           adminFee,
-          1,
+          7,
           celoDollar.address,
           blxToken.address
         ),
@@ -71,7 +71,7 @@ contract("Main", async (accounts) => {
           5,
           0,
           adminFee,
-          2,
+          7,
           celoDollar.address,
           blxToken.address
         ),
@@ -79,8 +79,8 @@ contract("Main", async (accounts) => {
       );
     });
 
-    it("should return an error if the payTime duration is less than a day", async () => {
-      const errorMessage = "El tiempo para pagar no puede ser menor a un dia";
+    it("should return an error if the payTime duration is less than a week", async () => {
+      const errorMessage = "El tiempo para pagar no puede ser menor a una semana";
 
       await expectRevert(
         instance.createRound(
@@ -88,7 +88,7 @@ contract("Main", async (accounts) => {
           5,
           3,
           adminFee,
-          0,
+          6,
           celoDollar.address,
           blxToken.address
         ),
