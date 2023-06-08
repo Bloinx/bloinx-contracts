@@ -31,7 +31,7 @@ contract Main is AccessControl {
                         ) external payable returns(address) {
         Iblx=IAccessControl(_blxaddr);
         blx=BLXToken(_blxaddr);
-        trim = (block.timestamp - deployDate) / 7776000;
+        trim = 1 + ((block.timestamp - deployDate) / 7776000);
         SavingGroups newRound = new SavingGroups(   _warranty,
                                                     _saving,
                                                     _groupSize,
