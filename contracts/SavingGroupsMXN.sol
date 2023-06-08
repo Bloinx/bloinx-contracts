@@ -1,11 +1,13 @@
 // SPDX-License-Identifier: BSD 3-Clause License
-pragma solidity ^0.8.18;
+pragma solidity ^0.8.0;
+pragma experimental ABIEncoderV2;
 
 import "./Modifiers.sol";
 import "./BLXToken.sol";
 import "@chainlink/contracts/src/v0.8/interfaces/AggregatorV3Interface.sol";
+import "hardhat/console.sol";
 
-contract SavingGroupsMXN is Modifiers {
+contract SavingGroups is Modifiers {
     enum Stages {
         //Stages of the round
         Setup,
@@ -37,6 +39,7 @@ contract SavingGroupsMXN is Modifiers {
     uint256 public groupSize; //Number of slots for users to participate on the saving circle
     uint256 public adminFee; //The fee the admin will charge to the users, it will be taken from the users cashin
     address public devFund; // fees will be sent here
+    uint256 public trimester; // deploymet trimester from June/01/2023
 
     //Counters and flags
     uint256 usersCounter = 0;
@@ -93,13 +96,23 @@ contract SavingGroupsMXN is Modifiers {
         ERC20 _token,
         BLXToken _BLX,
         address _devFund,
-        uint256 _fee
+        uint256 _fee,
+        uint256 _trimester
     ) public {
         stableToken = _token;
-        require(_admin != address(0), "address cant be zero");
-        require(_groupSize > 1 && _groupSize <= 12, "group size error");
-        require(_cashIn >= 2, "deposit qty error");
-        require(_saveAmount >= 2, "payment qty error");
+        require(
+            _admin != address(0),
+            "La direccion del administrador no puede ser cero"
+        );
+        require(
+            _groupSize > 1 && _groupSize <= 12,
+            "El tamanio del grupo debe ser mayor a uno y menor o igual a 12"
+        );
+        require(
+            _cashIn >= 2,
+            "El deposito de seguridad debe ser minimo de 2 USD"
+        );
+        require(_saveAmount >= 2, "El pago debe ser minimo de 2 USD");
         require(_adminFee <= 100);
         admin = _admin;
         adminFee = _adminFee;
@@ -110,7 +123,10 @@ contract SavingGroupsMXN is Modifiers {
         saveAmount = _saveAmount * 10 ** stableToken.decimals();
         stage = Stages.Setup;
         addressOrderList = new address[](_groupSize);
-        require(_payTime > 0, "paytime error");
+        require(
+            _payTime > 0,
+            "El tiempo para pagar no puede ser menor a un dia"
+        );
         payTime = _payTime * 60; //86400;
         feeCost = (saveAmount * 100 * _fee) / 10000; // calculate 5% fee
         // Data Feed MXN/USD
@@ -119,18 +135,25 @@ contract SavingGroupsMXN is Modifiers {
             // Mumbai DAI/USD
             // 0x0FCAa9c899EC5A91eBc3D5Dd869De833b06fB046
         );
+        trimester = _trimester;
         emit RoundCreated(saveAmount, groupSize);
     }
 
     modifier atStage(Stages _stage) {
-        require(stage == _stage, "Stage incorrecto");
+        require(stage == _stage, "Stage incorrecto para ejecutar la funcion");
         _;
     }
 
     function registerUser(uint8 _userTurn) external atStage(Stages.Setup) {
-        require(!users[msg.sender].isActive, "already registered");
-        require(usersCounter < groupSize, "group is full"); //the saving circle is full
-        require(addressOrderList[_userTurn - 1] == address(0), "turn taken");
+        require(
+            !users[msg.sender].isActive,
+            "Ya estas registrado en esta ronda"
+        );
+        require(usersCounter < groupSize, "El grupo esta completo"); //the saving circle is full
+        require(
+            addressOrderList[_userTurn - 1] == address(0),
+            "Este lugar ya esta ocupado"
+        );
         usersCounter++;
         users[msg.sender] = User(
             msg.sender,
@@ -157,10 +180,16 @@ contract SavingGroupsMXN is Modifiers {
         require(
             msg.sender == admin ||
                 msg.sender == addressOrderList[_userTurn - 1],
-            "not autorized"
+            "No tienes autorizacion para eliminar a este usuario"
         );
-        require(addressOrderList[_userTurn - 1] != address(0), "turn empty");
-        require(admin != addressOrderList[_userTurn - 1], "not allowed");
+        require(
+            addressOrderList[_userTurn - 1] != address(0),
+            "Este turno esta vacio"
+        );
+        require(
+            admin != addressOrderList[_userTurn - 1],
+            "No puedes eliminar al administrador de la ronda"
+        );
         address removeAddress = addressOrderList[_userTurn - 1];
         if (users[removeAddress].availableCashIn > 0) {
             //if user has cashIn available, send it back
@@ -176,7 +205,7 @@ contract SavingGroupsMXN is Modifiers {
     }
 
     function startRound() external onlyAdmin(admin) atStage(Stages.Setup) {
-        require(usersCounter == groupSize, "unassigned turns");
+        require(usersCounter == groupSize, "Aun hay lugares sin asignar");
         stage = Stages.Save;
         startTime = block.timestamp;
     }
@@ -283,7 +312,7 @@ contract SavingGroupsMXN is Modifiers {
         uint8 senderTurn = users[msg.sender].userTurn;
 
         uint8 realTurn = getRealTurn();
-        require(realTurn > senderTurn, "No es tu turno"); //turn = turno actual de la rosca
+        require(realTurn > senderTurn, "Espera a llegar a tu turno"); //turn = turno actual de la rosca
         require(users[msg.sender].withdrewAmount == 0);
         //First transaction that will complete saving of currentTurn and will trigger next turn
         //Because this runs each user action, we are sure the user in turn has its availableSavings complete
@@ -411,7 +440,10 @@ contract SavingGroupsMXN is Modifiers {
     }
 
     function emergencyWithdraw() public atStage(Stages.Emergency) {
-        require(stableToken.balanceOf(address(this)) > 0, "empty balance");
+        require(
+            stableToken.balanceOf(address(this)) > 0,
+            "No hay saldo por retirar"
+        );
         for (uint8 turno = turn; turno <= groupSize; turno++) {
             completeSavingsAndAdvanceTurn(turno);
         }
@@ -438,7 +470,7 @@ contract SavingGroupsMXN is Modifiers {
     }
 
     function endRound() public atStage(Stages.Save) {
-        require(getRealTurn() > groupSize, "No ha finalizado");
+        require(getRealTurn() > groupSize, "No ha terminado la ronda");
         for (uint8 turno = turn; turno <= groupSize; turno++) {
             completeSavingsAndAdvanceTurn(turno);
         }
@@ -454,6 +486,9 @@ contract SavingGroupsMXN is Modifiers {
             }
             sumAvailableCashIn += users[userAddr].availableCashIn;
         }
+        uint256 latestPrice = uint256(getLatestPrice() * 10 ** 10);
+        console.log("LatestPrice: ", latestPrice);
+
         if (!outOfFunds) {
             uint256 totalAdminFee = 0;
             uint256 amountDevFund = 0;
@@ -470,18 +505,19 @@ contract SavingGroupsMXN is Modifiers {
                     users[userAddr].availableSavings;
                 users[userAddr].availableSavings = 0;
                 transferTo(users[userAddr].userAddr, amountTempUsr);
-                uint256 reward = (10 *
-                    cashInReturn *
-                    users[userAddr].userTurn *
-                    users[userAddr].userTurn);
-                //BLX.mint(users[userAddr].userAddr, reward);
+                uint256 reward = (5 *
+                    saveAmount *
+                    latestPrice *
+                    (users[userAddr].userTurn /
+                    trimester));
+                BLX.mint(users[userAddr].userAddr, reward);
                 amountDevFund += reward / 10;
                 cashInReturn = 0;
                 reward = 0;
                 emit EndRound(address(this), startTime, block.timestamp);
             }
             transferTo(admin, totalAdminFee);
-            //BLX.mint(devFund, amountDevFund);
+            BLX.mint(devFund, amountDevFund);
             stage = Stages.Finished;
         } else {
             for (uint8 i = 0; i < groupSize; i++) {
@@ -570,7 +606,7 @@ contract SavingGroupsMXN is Modifiers {
         return (users[userAddr].isActive);
     }
 
-    function getLatestPrice() internal view returns (int) {
+    function getLatestPrice() public view returns (int) {
         // prettier-ignore
         (
             /* uint80 roundID */,
